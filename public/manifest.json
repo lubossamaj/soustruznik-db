@@ -1,0 +1,18 @@
+{
+  "name": "Soustružník DB",
+  "short_name": "SoustruhDB",
+  "description": "Databáze výkresů a technologických postupů pro soustružníky",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#f0a500",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
