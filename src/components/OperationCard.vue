@@ -28,11 +28,11 @@
       </div>
       <div class="op-card__param">
         <span class="op-card__param-label">Spona Š1</span>
-        <span class="op-card__param-value">{{ operation.clampS1 }}</span>
+        <span class="op-card__param-value">{{ operation.clampS1 }} <span class="op-card__unit">mm</span></span>
       </div>
       <div class="op-card__param">
         <span class="op-card__param-label">Spona Š2</span>
-        <span class="op-card__param-value">{{ operation.clampS2 }}</span>
+        <span class="op-card__param-value">{{ operation.clampS2 }} <span class="op-card__unit">mm</span></span>
       </div>
       <div class="op-card__param">
         <span class="op-card__param-label">Příprava</span>

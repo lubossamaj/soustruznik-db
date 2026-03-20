@@ -23,6 +23,9 @@
           {{ drawing.operations.length }}
           {{ opsLabel(drawing.operations.length) }}
         </span>
+        <span v-if="totalTime(drawing) > 0" class="drawing-card__time">
+          {{ totalTime(drawing) }} min
+        </span>
         <span class="drawing-card__date">{{ formatDate(drawing.updatedAt) }}</span>
       </div>
     </div>
@@ -49,6 +52,11 @@ function opsLabel(count) {
   if (count === 1) return 'operace'
   if (count >= 2 && count <= 4) return 'operace'
   return 'operací'
+}
+
+/** Součet časů přípravy + výroby přes všechny operace */
+function totalTime(drawing) {
+  return drawing.operations.reduce((sum, op) => sum + (op.prepTime || 0) + (op.prodTime || 0), 0)
 }
 
 /** Formátuje datum na čitelný tvar */
@@ -143,6 +151,12 @@ function formatDate(isoString) {
 .drawing-card__date {
   font-size: 12px;
   color: var(--text-muted);
+}
+
+.drawing-card__time {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 600;
 }
 
 /* Šipka */

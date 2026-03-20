@@ -64,12 +64,11 @@
         <div class="form-group">
           <label class="form-label">Posuv F <span>*</span></label>
           <input
-            type="number"
+            type="text"
+            inputmode="decimal"
             class="form-control"
             :value="operation.feed"
-            step="any"
-            inputmode="decimal"
-            @input="update('feed', parseFloat($event.target.value) || 0)"
+            @change="update('feed', parseDecimal($event.target.value))"
           />
         </div>
         <div class="form-group">
@@ -105,24 +104,24 @@
         <div class="form-group">
           <label class="form-label">Spona Š1</label>
           <input
-            type="number"
+            type="text"
+            inputmode="decimal"
             class="form-control"
             :value="operation.clampS1"
-            step="any"
-            inputmode="decimal"
-            @input="update('clampS1', parseFloat($event.target.value) || 0)"
+            @change="update('clampS1', parseDecimal($event.target.value))"
           />
+          <div class="form-unit">mm</div>
         </div>
         <div class="form-group">
           <label class="form-label">Spona Š2</label>
           <input
-            type="number"
+            type="text"
+            inputmode="decimal"
             class="form-control"
             :value="operation.clampS2"
-            step="any"
-            inputmode="decimal"
-            @input="update('clampS2', parseFloat($event.target.value) || 0)"
+            @change="update('clampS2', parseDecimal($event.target.value))"
           />
+          <div class="form-unit">mm</div>
         </div>
       </div>
 
@@ -216,6 +215,11 @@ const tools = Array.from({ length: 20 }, (_, i) => `T${i + 1}`)
 
 // Hodnoty potenciometru
 const potentiometerValues = [0, 2, 4, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120]
+
+/** Parsuje desetinné číslo – přijímá tečku i čárku jako oddělovač */
+function parseDecimal(val) {
+  return parseFloat(String(val).replace(',', '.')) || 0
+}
 
 /**
  * Emituje aktualizaci jednoho pole operace.
