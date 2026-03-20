@@ -67,13 +67,10 @@
             type="number"
             class="form-control"
             :value="operation.feed"
-            min="0.00"
-            max="1.00"
-            step="0.01"
+            step="any"
             inputmode="decimal"
             @input="update('feed', parseFloat($event.target.value) || 0)"
           />
-          <div class="form-unit">mm/ot</div>
         </div>
         <div class="form-group">
           <label class="form-label">Otáčky S <span>*</span></label>
@@ -81,11 +78,11 @@
             type="number"
             class="form-control"
             :value="operation.speed"
-            min="50"
-            max="1000"
+            min="0"
+            max="1500"
             step="1"
             inputmode="numeric"
-            @input="update('speed', parseInt($event.target.value) || 50)"
+            @input="update('speed', parseInt($event.target.value) || 0)"
           />
           <div class="form-unit">ot/min</div>
         </div>
@@ -111,13 +108,10 @@
             type="number"
             class="form-control"
             :value="operation.clampS1"
-            min="0"
-            max="10"
-            step="0.1"
+            step="any"
             inputmode="decimal"
             @input="update('clampS1', parseFloat($event.target.value) || 0)"
           />
-          <div class="form-unit">mm</div>
         </div>
         <div class="form-group">
           <label class="form-label">Spona Š2</label>
@@ -125,13 +119,40 @@
             type="number"
             class="form-control"
             :value="operation.clampS2"
-            min="0"
-            max="10"
-            step="0.1"
+            step="any"
             inputmode="decimal"
             @input="update('clampS2', parseFloat($event.target.value) || 0)"
           />
-          <div class="form-unit">mm</div>
+        </div>
+      </div>
+
+      <!-- Příprava a Výroba – časy v minutách -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Příprava</label>
+          <input
+            type="number"
+            class="form-control"
+            :value="operation.prepTime"
+            min="0"
+            step="1"
+            inputmode="numeric"
+            @input="update('prepTime', parseFloat($event.target.value) || 0)"
+          />
+          <div class="form-unit">min</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Výroba</label>
+          <input
+            type="number"
+            class="form-control"
+            :value="operation.prodTime"
+            min="0"
+            step="1"
+            inputmode="numeric"
+            @input="update('prodTime', parseFloat($event.target.value) || 0)"
+          />
+          <div class="form-unit">min</div>
         </div>
       </div>
 

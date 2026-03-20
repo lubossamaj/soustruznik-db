@@ -109,10 +109,12 @@ function normalizeOperations(ops) {
     operationType:   op.operationType  || '',
     tool:            op.tool           || 'T1',
     feed:            parseFloat(op.feed)        || 0,
-    speed:           parseInt(op.speed)         || 50,
+    speed:           parseInt(op.speed)         || 0,
     potentiometer:   parseInt(op.potentiometer) || 0,
     clampS1:         parseFloat(op.clampS1)     || 0,
     clampS2:         parseFloat(op.clampS2)     || 0,
+    prepTime:        parseFloat(op.prepTime)    || 0,
+    prodTime:        parseFloat(op.prodTime)    || 0,
     note:            op.note           || '',
   }))
 }

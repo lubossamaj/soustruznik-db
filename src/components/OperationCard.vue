@@ -16,7 +16,7 @@
     <div class="op-card__params">
       <div class="op-card__param">
         <span class="op-card__param-label">Posuv F</span>
-        <span class="op-card__param-value">{{ formatFeed(operation.feed) }} <span class="op-card__unit">mm/ot</span></span>
+        <span class="op-card__param-value">{{ operation.feed }}</span>
       </div>
       <div class="op-card__param">
         <span class="op-card__param-label">Otáčky S</span>
@@ -28,11 +28,19 @@
       </div>
       <div class="op-card__param">
         <span class="op-card__param-label">Spona Š1</span>
-        <span class="op-card__param-value">{{ formatClamp(operation.clampS1) }} <span class="op-card__unit">mm</span></span>
+        <span class="op-card__param-value">{{ operation.clampS1 }}</span>
       </div>
       <div class="op-card__param">
         <span class="op-card__param-label">Spona Š2</span>
-        <span class="op-card__param-value">{{ formatClamp(operation.clampS2) }} <span class="op-card__unit">mm</span></span>
+        <span class="op-card__param-value">{{ operation.clampS2 }}</span>
+      </div>
+      <div class="op-card__param">
+        <span class="op-card__param-label">Příprava</span>
+        <span class="op-card__param-value">{{ operation.prepTime ?? 0 }} <span class="op-card__unit">min</span></span>
+      </div>
+      <div class="op-card__param">
+        <span class="op-card__param-label">Výroba</span>
+        <span class="op-card__param-value">{{ operation.prodTime ?? 0 }} <span class="op-card__unit">min</span></span>
       </div>
     </div>
 
@@ -54,15 +62,7 @@ defineProps({
   },
 })
 
-/** Formátuje posuv na 2 desetinná místa */
-function formatFeed(val) {
-  return Number(val).toFixed(2)
-}
 
-/** Formátuje sponu na 1 desetinné místo */
-function formatClamp(val) {
-  return Number(val).toFixed(1)
-}
 </script>
 
 <style scoped>
