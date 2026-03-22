@@ -337,13 +337,40 @@
             </div>
           </div>
 
-          <h3 class="subsection-heading">Příklady uložení – soustava díry H</h3>
-          <div class="fits-grid">
-            <div v-for="f in fits" :key="f.fit" class="fit-card">
-              <div class="fit-card__fit">{{ f.fit }}</div>
-              <div class="fit-card__type">{{ f.type }}</div>
-              <div class="fit-card__desc">{{ f.desc }}</div>
-            </div>
+          <h3 class="subsection-heading">Uložení v soustavě díry H – přehled</h3>
+          <div class="fits-filter">
+            <button
+              v-for="cls in ['Vše','H5','H6','H7','H8','H9','H10','H11','H12+']"
+              :key="cls"
+              class="shape-btn"
+              :class="{ 'shape-btn--active': fitsFilter === cls }"
+              @click="fitsFilter = cls"
+              type="button"
+            >{{ cls }}</button>
+          </div>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Uložení</th>
+                  <th>Typ</th>
+                  <th>Charakter</th>
+                  <th>Použití</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="f in filteredFits" :key="f.fit">
+                  <td class="td-name fits-name">{{ f.fit }}</td>
+                  <td style="white-space:nowrap;font-size:12px">{{ f.type }}</td>
+                  <td>
+                    <span class="fits-char" :class="'fits-char--' + f.char">
+                      {{ f.char === 'V' ? 'Vůle' : f.char === 'P' ? 'Přechod' : 'Přesah' }}
+                    </span>
+                  </td>
+                  <td class="td-usage">{{ f.desc }}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
           <!-- DRSNOST POVRCHU Ra (přesunuto z vlastního tabu) -->
@@ -658,6 +685,14 @@ const calcWeight = computed(() => {
   }
 })
 
+// ---- FITS FILTER ----
+const fitsFilter = ref('Vše')
+const filteredFits = computed(() => {
+  if (fitsFilter.value === 'Vše') return fits
+  const prefix = fitsFilter.value === 'H12+' ? ['H12', 'H13'] : [fitsFilter.value]
+  return fits.filter(f => prefix.some(p => f.fit.startsWith(p + '/')))
+})
+
 // ---- ISO 2768 TOLERANCE VYHLEDÁVAČ ----
 const tolDim = ref(null)
 
@@ -864,14 +899,60 @@ const abbreviations = [
 
 
 const fits = [
-  { fit:'H7/h6', type:'Přechodné', desc:'Snadné ruční zasunutí – ložiska, ozubená kola' },
-  { fit:'H7/f7', type:'Kluzné',    desc:'Kluzné uložení – hřídele v kluzných ložiskách' },
-  { fit:'H7/n6', type:'Lisované',  desc:'Lehké lisování – náboje, pouzdra' },
-  { fit:'H7/p6', type:'Lisované',  desc:'Pevné lisování – ozubená kola na hřídelích' },
-  { fit:'H7/r6', type:'Lisované',  desc:'Těsné lisování – spojky, bubny' },
-  { fit:'H7/s6', type:'Přesah',    desc:'Velký přesah – těžce namáhané spoje' },
-  { fit:'H8/e8', type:'Volné',     desc:'Volné kluzné – čerpadla, kompresory' },
-  { fit:'H9/d9', type:'Volné',     desc:'Velmi volné – pohyblivé části, pístnice' },
+  // H5 – velmi přesné uložení
+  { fit:'H5/g4', char:'V', type:'Kluzné přesné',      desc:'Velmi přesné kluzné – vřetena, měřidla' },
+  { fit:'H5/h4', char:'V', type:'Přesné',             desc:'Přesné nastavitelné spoje bez vůle' },
+  { fit:'H5/k4', char:'P', type:'Přechodné',          desc:'Přesné přechodné – přesná kola' },
+  { fit:'H5/m4', char:'P', type:'Přechodné',          desc:'Přechodné s malým přesahem' },
+  { fit:'H5/n4', char:'N', type:'Lehký přesah',       desc:'Lehké lisování – přesné náboje' },
+  // H6 – přesné uložení
+  { fit:'H6/g5', char:'V', type:'Kluzné',             desc:'Kluzné přesné – přesná ložiska' },
+  { fit:'H6/h5', char:'V', type:'Přesné',             desc:'Přesná poloha – nulová vůle' },
+  { fit:'H6/js5',char:'P', type:'Přechodné',          desc:'Symetrické přechodné – ozubená kola' },
+  { fit:'H6/k5', char:'P', type:'Přechodné',          desc:'Přechodné – náboje, kola na hřídelích' },
+  { fit:'H6/m5', char:'P', type:'Přechodné',          desc:'Přechodné s přesahem – spojovací náboje' },
+  { fit:'H6/n5', char:'N', type:'Lehký přesah',       desc:'Lehké lisování – přesné pouzdra' },
+  { fit:'H6/p5', char:'N', type:'Lisované',           desc:'Lisování – přesné spoje' },
+  { fit:'H6/r5', char:'N', type:'Lisované',           desc:'Pevné lisování – přesné náboje' },
+  { fit:'H6/s5', char:'N', type:'Těsné lisování',     desc:'Těsné lisování – permanentní spoje' },
+  // H7 – nejběžnější uložení
+  { fit:'H7/e8', char:'V', type:'Volné kluzné',       desc:'Volné kluzné – čerpadla, kompresory' },
+  { fit:'H7/f7', char:'V', type:'Kluzné',             desc:'Kluzné – hřídele v kluzných ložiskách' },
+  { fit:'H7/g6', char:'V', type:'Kluzné jemné',       desc:'Jemné kluzné – přesné posuvné díly' },
+  { fit:'H7/h6', char:'V', type:'Přesné',             desc:'Ruční zasunutí – ložiska, ozubená kola' },
+  { fit:'H7/js6',char:'P', type:'Přechodné',          desc:'Symetrické přechodné – spojovací náboje' },
+  { fit:'H7/k6', char:'P', type:'Přechodné',          desc:'Přechodné – náboje, ozubená kola' },
+  { fit:'H7/m6', char:'P', type:'Přechodné',          desc:'Přechodné s přesahem – spojky, náboje' },
+  { fit:'H7/n6', char:'N', type:'Lehký přesah',       desc:'Lehké lisování – náboje, pouzdra' },
+  { fit:'H7/p6', char:'N', type:'Lisované',           desc:'Lisování – ozubená kola na hřídelích' },
+  { fit:'H7/r6', char:'N', type:'Lisované',           desc:'Pevné lisování – spojky, bubny' },
+  { fit:'H7/s6', char:'N', type:'Těsné lisování',     desc:'Velký přesah – těžce namáhané spoje' },
+  { fit:'H7/t6', char:'N', type:'Silné lisování',     desc:'Silné lisování – permanentní spoje' },
+  { fit:'H7/u6', char:'N', type:'Silné lisování',     desc:'Velmi silný přesah – svěrné spoje' },
+  // H8 – normální uložení
+  { fit:'H8/d9', char:'V', type:'Volné',              desc:'Volné – pohyblivé části, pístnice' },
+  { fit:'H8/e8', char:'V', type:'Volné kluzné',       desc:'Volné kluzné – větší ložiska' },
+  { fit:'H8/f7', char:'V', type:'Kluzné',             desc:'Kluzné – běžná kluzná ložiska' },
+  { fit:'H8/h7', char:'V', type:'Přesné',             desc:'Přesné nastavitelné – polohovací spoje' },
+  { fit:'H8/js7',char:'P', type:'Přechodné',          desc:'Přechodné – víka, příruby' },
+  { fit:'H8/k7', char:'P', type:'Přechodné',          desc:'Přechodné – náboje, kola' },
+  { fit:'H8/s7', char:'N', type:'Lisované',           desc:'Lisování – pevné spoje' },
+  { fit:'H8/u7', char:'N', type:'Silné lisování',     desc:'Silné lisování – permanentní spoje' },
+  // H9 – hrubší uložení
+  { fit:'H9/d9', char:'V', type:'Volné',              desc:'Volné – posuvné části, vedení' },
+  { fit:'H9/e9', char:'V', type:'Volné kluzné',       desc:'Volné kluzné – větší stroje' },
+  { fit:'H9/h9', char:'V', type:'Přesné',             desc:'Přesné – šrouby, kolíky' },
+  // H10
+  { fit:'H10/d10',char:'V',type:'Volné',              desc:'Volné – hrubší posuvné spoje' },
+  { fit:'H10/h10',char:'V',type:'Přesné',             desc:'Přesné – hrubší spoje' },
+  // H11 – hrubé uložení
+  { fit:'H11/a11',char:'V',type:'Velmi volné',        desc:'Velmi volné – hrubé odlitky' },
+  { fit:'H11/b11',char:'V',type:'Velmi volné',        desc:'Velmi volné – surové výrobky' },
+  { fit:'H11/c11',char:'V',type:'Volné hrubé',        desc:'Hrubé volné – svařované konstrukce' },
+  { fit:'H11/h11',char:'V',type:'Hrubé přesné',       desc:'Hrubé přesné – neobrobené plochy' },
+  // H12, H13
+  { fit:'H12/b12',char:'V',type:'Velmi volné',        desc:'Velmi volné hrubé – lité díly' },
+  { fit:'H13/h13',char:'V',type:'Hrubé',              desc:'Nejhrubší – neobrobené povrchy' },
 ]
 
 const materials = [
@@ -1365,6 +1446,32 @@ const materials = [
   gap: 10px;
 }
 .thread-empty__icon { font-size: 40px; opacity: 0.4; }
+
+/* ---- FITS ---- */
+.fits-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.fits-filter .shape-btn {
+  flex: none;
+  min-width: auto;
+  padding: 6px 12px;
+  font-size: 12px;
+}
+.fits-name { font-family: monospace; font-size: 14px; letter-spacing: 0.3px; }
+.fits-char {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.fits-char--V { background: rgba(52,211,153,0.15); color: #34d399; }
+.fits-char--P { background: rgba(251,191,36,0.15); color: #fbbf24; }
+.fits-char--N { background: rgba(248,113,113,0.15); color: #f87171; }
 
 /* ---- ISO 2768 TOLERANCE ---- */
 .tol-lookup-card {
