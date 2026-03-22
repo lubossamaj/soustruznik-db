@@ -61,6 +61,7 @@
                 <div class="tool-row__name" :class="{ 'tool-row__name--empty': !tool.name }">
                   {{ tool.name || 'Nenastaveno' }}
                 </div>
+                <div v-if="tool.insert" class="tool-row__insert">🔷 {{ tool.insert }}</div>
                 <div v-if="tool.material" class="tool-row__material">{{ tool.material }}</div>
                 <div v-if="tool.rpmMin || tool.rpmMax" class="tool-row__rpm">
                   {{ tool.rpmMin }}–{{ tool.rpmMax }} ot/min
@@ -536,7 +537,14 @@
             <div class="form-group">
               <label class="form-label">Označení výrobce / katalogové číslo</label>
               <input v-model="editModal.form.manufacturerCode" type="text" class="form-control"
-                placeholder="např. Iskar 1350, CNMG 120408, SDNCN 2020" autocomplete="off" spellcheck="false" />
+                placeholder="např. Iskar 1350, SDNCN 2020" autocomplete="off" spellcheck="false" />
+            </div>
+
+            <!-- Břit / platek -->
+            <div class="form-group">
+              <label class="form-label">Břit / platek (VBD)</label>
+              <input v-model="editModal.form.insert" type="text" class="form-control"
+                placeholder="např. CNMG 120408, WNMG 080408-MF" autocomplete="off" spellcheck="false" />
             </div>
 
             <!-- Fotky nástroje -->
@@ -751,7 +759,7 @@ const editModal = reactive({
   open: false,
   tool: {},
   form: {
-    manufacturerCode: '', name: '', photos: [], description: '',
+    manufacturerCode: '', name: '', insert: '', photos: [], description: '',
     rpmMin: '', rpmMax: '', material: '', note: '',
   },
 })
@@ -761,6 +769,7 @@ function openEdit(tool) {
   editModal.form = {
     manufacturerCode: tool.manufacturerCode || '',
     name:             tool.name             || '',
+    insert:           tool.insert           || '',
     photos:           Array.isArray(tool.photos) ? [...tool.photos] : [],
     description:      tool.description      || '',
     rpmMin:           tool.rpmMin           || '',
@@ -1336,6 +1345,13 @@ const materials = [
   color: var(--text-muted);
   font-weight: 400;
   font-style: italic;
+}
+.tool-row__insert {
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 600;
+  margin-top: 2px;
+  letter-spacing: 0.2px;
 }
 .tool-row__material {
   font-size: 11px;
