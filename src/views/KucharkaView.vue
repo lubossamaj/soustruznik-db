@@ -41,9 +41,9 @@
               class="tool-row"
               @click="openEdit(tool)"
             >
-              <!-- Fotka / placeholder -->
+              <!-- Fotka / placeholder (první z pole) -->
               <div class="tool-row__photo">
-                <img v-if="tool.photo" :src="tool.photo" alt="" class="tool-row__img" />
+                <img v-if="tool.photos && tool.photos.length" :src="tool.photos[0]" alt="" class="tool-row__img" />
                 <span v-else class="tool-row__noimg">🔧</span>
               </div>
 
@@ -524,25 +524,36 @@
                 placeholder="např. Iskar 1350, CNMG 120408, SDNCN 2020" autocomplete="off" spellcheck="false" />
             </div>
 
-            <!-- Fotka -->
+            <!-- Fotky nástroje -->
             <div class="form-group">
-              <label class="form-label">Fotka nástroje</label>
-              <div v-if="editModal.form.photo" class="photo-current">
-                <img :src="editModal.form.photo" alt="Nástroj" class="photo-preview" />
-                <div style="display:flex;gap:8px;margin-top:8px">
-                  <label class="btn btn-secondary" style="cursor:pointer;flex:1">
-                    📷 Změnit
-                    <input type="file" accept="image/*" capture="environment" class="sr-only" @change="handlePhoto" />
-                  </label>
-                  <button type="button" class="btn btn-ghost" @click="confirmRemoveToolPhoto = true">Odebrat</button>
+              <label class="form-label">
+                Fotky nástroje
+                <span v-if="editModal.form.photos.length" style="font-weight:400;color:var(--text-muted)">({{ editModal.form.photos.length }})</span>
+              </label>
+
+              <!-- Mřížka fotek -->
+              <div v-if="editModal.form.photos.length" class="photos-grid">
+                <div
+                  v-for="(photo, idx) in editModal.form.photos"
+                  :key="idx"
+                  class="photos-grid__item"
+                  @click="openToolFullscreen(idx)"
+                >
+                  <img :src="photo" :alt="`Fotka ${idx + 1}`" class="photos-grid__img" />
+                  <button
+                    type="button"
+                    class="photos-grid__remove"
+                    @click.stop="confirmRemoveToolPhoto = idx"
+                    aria-label="Odebrat fotku"
+                  >✕</button>
+                  <span v-if="idx === 0" class="photos-grid__badge">Náhled</span>
                 </div>
               </div>
-              <div v-else>
-                <label class="btn btn-secondary btn-block" style="cursor:pointer">
-                  📷 Přidat fotku nástroje
-                  <input type="file" accept="image/*" capture="environment" class="sr-only" @change="handlePhoto" />
-                </label>
-              </div>
+
+              <label class="btn btn-secondary btn-block" style="cursor:pointer; margin-top:10px">
+                📷 {{ editModal.form.photos.length === 0 ? 'Přidat fotku nástroje' : 'Přidat fotku' }}
+                <input type="file" accept="image/*" capture="environment" class="sr-only" @change="handlePhoto" />
+              </label>
             </div>
 
             <!-- Název -->
@@ -600,20 +611,68 @@
 
     <!-- DIALOG: Odebrat fotku nástroje -->
     <transition name="fade">
-      <div v-if="confirmRemoveToolPhoto" class="modal-overlay" @click.self="confirmRemoveToolPhoto = false">
+      <div v-if="confirmRemoveToolPhoto !== null" class="modal-overlay" @click.self="confirmRemoveToolPhoto = null">
         <div class="modal">
           <div class="modal__title">Odebrat fotku nástroje?</div>
           <div class="modal__text">
-            Opravdu chcete odebrat fotku nástroje <strong>{{ editModal.tool.id }}</strong>?
+            Opravdu chcete odebrat tuto fotku nástroje <strong>{{ editModal.tool.id }}</strong>?
           </div>
           <div class="modal__actions">
-            <button class="btn btn-ghost" type="button" @click="confirmRemoveToolPhoto = false">
+            <button class="btn btn-ghost" type="button" @click="confirmRemoveToolPhoto = null">
               Zrušit
             </button>
             <button class="btn btn-danger" type="button" @click="doRemoveToolPhoto">
               Odebrat
             </button>
           </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- FULLSCREEN GALERIE NÁSTROJE -->
+    <transition name="fade">
+      <div
+        v-if="toolFullscreen.open"
+        class="photo-fullscreen"
+        role="dialog"
+        aria-label="Galerie fotek nástroje"
+        @touchstart.passive="onToolTouchStart"
+        @touchend.passive="onToolTouchEnd"
+      >
+        <button class="photo-fullscreen__close" @click="toolFullscreen.open = false" aria-label="Zavřít">✕</button>
+
+        <div v-if="editModal.form.photos.length > 1" class="photo-fullscreen__counter">
+          {{ toolFullscreen.index + 1 }} / {{ editModal.form.photos.length }}
+        </div>
+
+        <img
+          :src="editModal.form.photos[toolFullscreen.index]"
+          :alt="`Fotka ${toolFullscreen.index + 1}`"
+          @click="toolFullscreen.open = false"
+        />
+
+        <button
+          v-if="editModal.form.photos.length > 1 && toolFullscreen.index > 0"
+          class="photo-fullscreen__arrow photo-fullscreen__arrow--left"
+          @click.stop="toolFullscreen.index--"
+          aria-label="Předchozí fotka"
+        >‹</button>
+
+        <button
+          v-if="editModal.form.photos.length > 1 && toolFullscreen.index < editModal.form.photos.length - 1"
+          class="photo-fullscreen__arrow photo-fullscreen__arrow--right"
+          @click.stop="toolFullscreen.index++"
+          aria-label="Další fotka"
+        >›</button>
+
+        <div v-if="editModal.form.photos.length > 1" class="photo-fullscreen__dots">
+          <span
+            v-for="(_, i) in editModal.form.photos"
+            :key="i"
+            class="photo-fullscreen__dot"
+            :class="{ 'photo-fullscreen__dot--active': i === toolFullscreen.index }"
+            @click.stop="toolFullscreen.index = i"
+          />
         </div>
       </div>
     </transition>
@@ -643,7 +702,7 @@ const editModal = reactive({
   open: false,
   tool: {},
   form: {
-    manufacturerCode: '', name: '', photo: null, description: '',
+    manufacturerCode: '', name: '', photos: [], description: '',
     rpmMin: '', rpmMax: '', material: '', note: '',
   },
 })
@@ -653,7 +712,7 @@ function openEdit(tool) {
   editModal.form = {
     manufacturerCode: tool.manufacturerCode || '',
     name:             tool.name             || '',
-    photo:            tool.photo            || null,
+    photos:           Array.isArray(tool.photos) ? [...tool.photos] : [],
     description:      tool.description      || '',
     rpmMin:           tool.rpmMin           || '',
     rpmMax:           tool.rpmMax           || '',
@@ -671,7 +730,7 @@ function handlePhoto(event) {
   const file = event.target.files?.[0]
   if (!file) return
   const reader = new FileReader()
-  reader.onload = (e) => { editModal.form.photo = e.target.result }
+  reader.onload = (e) => { editModal.form.photos.push(e.target.result) }
   reader.readAsDataURL(file)
   event.target.value = ''
 }
@@ -681,11 +740,33 @@ function saveTool() {
   editModal.open = false
 }
 
-const confirmRemoveToolPhoto = ref(false)
+// Potvrzení smazání fotky (index nebo null)
+const confirmRemoveToolPhoto = ref(null)
 
 function doRemoveToolPhoto() {
-  editModal.form.photo = null
-  confirmRemoveToolPhoto.value = false
+  editModal.form.photos.splice(confirmRemoveToolPhoto.value, 1)
+  confirmRemoveToolPhoto.value = null
+}
+
+// Fullscreen galerie nástroje
+const toolFullscreen = reactive({ open: false, index: 0 })
+
+function openToolFullscreen(idx) {
+  toolFullscreen.index = idx
+  toolFullscreen.open = true
+}
+
+let toolTouchStartX = 0
+
+function onToolTouchStart(e) {
+  toolTouchStartX = e.touches[0].clientX
+}
+
+function onToolTouchEnd(e) {
+  const dx = e.changedTouches[0].clientX - toolTouchStartX
+  const len = editModal.form.photos.length
+  if (dx < -50 && toolFullscreen.index < len - 1) toolFullscreen.index++
+  else if (dx > 50 && toolFullscreen.index > 0) toolFullscreen.index--
 }
 
 // ---- KALKULAČKA ----
@@ -1762,6 +1843,58 @@ const materials = [
   white-space: nowrap;
   border-width: 0;
 }
+
+/* Mřížka fotek nástroje */
+.photos-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.photos-grid__item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--bg-primary);
+  cursor: zoom-in;
+}
+.photos-grid__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.photos-grid__remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.7);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.photos-grid__badge {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  background: var(--accent);
+  color: #1a1a2e;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.3px;
+}
+
+/* Fullscreen galerie – používá globální .photo-fullscreen ze style.css */
 
 .photo-current img {
   width: 100%;

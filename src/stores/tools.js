@@ -22,7 +22,7 @@ function emptyTool(pos) {
     position: pos,
     manufacturerCode: '',
     name: '',
-    photo: null,
+    photos: [],
     description: '',
     rpmMin: '',
     rpmMax: '',
@@ -69,7 +69,17 @@ export const useToolsStore = defineStore('tools', () => {
     (snapshot) => {
       const fromFirestore = {}
       snapshot.docs.forEach(d => {
-        fromFirestore[d.id] = { id: d.id, ...d.data() }
+        const data = d.data()
+        // Backward compat: staré dokumenty mají photo (string), nové photos (array)
+        let photos
+        if (Array.isArray(data.photos)) {
+          photos = data.photos
+        } else if (data.photo) {
+          photos = [data.photo]
+        } else {
+          photos = []
+        }
+        fromFirestore[d.id] = { id: d.id, ...data, photos }
       })
       tools.value = ALL_POSITIONS.map(pos => fromFirestore[pos] ?? emptyTool(pos))
       loading.value = false
@@ -95,14 +105,13 @@ export const useToolsStore = defineStore('tools', () => {
     // Async komprese + Firestore zápis
     ;(async () => {
       try {
-        let photo = data.photo ?? null
-        if (photo) photo = await compressImage(photo)
+        const photos = await Promise.all((data.photos || []).map(p => compressImage(p)))
 
         await setDoc(doc(db, COL, pos), {
           position:         pos,
           manufacturerCode: data.manufacturerCode ?? '',
           name:             data.name             ?? '',
-          photo,
+          photos,
           description:      data.description      ?? '',
           rpmMin:           data.rpmMin            ?? '',
           rpmMax:           data.rpmMax            ?? '',
