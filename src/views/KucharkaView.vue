@@ -372,43 +372,6 @@
             </table>
           </div>
 
-          <!-- MORSE KÓNUSY -->
-          <h3 class="subsection-heading">Morse kónusy – rozměry</h3>
-          <div class="table-scroll">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Morse č.</th>
-                  <th>Velký Ø D [mm]</th>
-                  <th>Malý Ø d [mm]</th>
-                  <th>Délka L [mm]</th>
-                  <th>Kužel</th>
-                  <th>Použití</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="m in morseTapers" :key="m.no">
-                  <td class="td-name">MK {{ m.no }}</td>
-                  <td>{{ m.D }}</td>
-                  <td>{{ m.d }}</td>
-                  <td>{{ m.L }}</td>
-                  <td>1 : {{ m.taper }}</td>
-                  <td class="td-usage">{{ m.usage }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <!-- MAZIVA A CHLAZENÍ -->
-          <h3 class="subsection-heading">Řezná média a chlazení</h3>
-          <div class="cooling-grid">
-            <div v-for="c in coolingFluids" :key="c.name" class="cooling-card">
-              <div class="cooling-card__icon">{{ c.icon }}</div>
-              <div class="cooling-card__name">{{ c.name }}</div>
-              <div class="cooling-card__desc">{{ c.desc }}</div>
-              <div class="cooling-card__for">{{ c.for }}</div>
-            </div>
-          </div>
         </section>
 
       </div>
@@ -730,23 +693,6 @@ const materials = [
   { name:'Plast (PA, PE, POM)',      iso:'N', vcRough:'200–400',  vcFinish:'300–600',  fRough:'0,1–0,3',  fFinish:'0,05–0,15', cooling:'Sucho / vzduch' },
 ]
 
-const morseTapers = [
-  { no:0, D:'9,045',  d:'6,401',  L:'56,5',  taper:'20,05', usage:'Malé vrtáky, gravírky' },
-  { no:1, D:'12,065', d:'9,401',  L:'65,5',  taper:'20,05', usage:'Vrtáky ⌀ 6–14 mm' },
-  { no:2, D:'17,780', d:'14,161', L:'80,0',  taper:'20,02', usage:'Vrtáky ⌀ 14–23 mm' },
-  { no:3, D:'23,825', d:'19,131', L:'99,0',  taper:'19,92', usage:'Vrtáky ⌀ 23–31 mm, koníky' },
-  { no:4, D:'31,267', d:'25,154', L:'124,0', taper:'19,95', usage:'Koníky, silné vrtáky' },
-  { no:5, D:'44,399', d:'36,547', L:'156,0', taper:'19,96', usage:'Těžké stroje' },
-  { no:6, D:'63,760', d:'53,000', L:'210,0', taper:'19,97', usage:'Velmi těžké stroje' },
-]
-
-const coolingFluids = [
-  { icon:'💧', name:'Řezná emulze',      desc:'Voda + emulgační olej 3–8%', for:'Ocel, nerez – universal' },
-  { icon:'🫙', name:'Řezný olej',        desc:'Minerální nebo syntetický',  for:'Závity, hliník, přesné operace' },
-  { icon:'💨', name:'Stlačený vzduch',   desc:'Ofukování třísek a chlazení', for:'Litina, plast, hliník' },
-  { icon:'🧊', name:'Minimální mazání (MQL)', desc:'Mlha oleje + vzduch',  for:'Moderní CNC, hliník, ocel' },
-  { icon:'🔥', name:'Sucho (bez chlazení)', desc:'Bez média',              for:'Litina, keramika, CBN nástroje' },
-]
 </script>
 
 <style scoped>
@@ -1121,26 +1067,6 @@ const coolingFluids = [
   margin: 16px 0;
 }
 
-/* ---- CHLAZENÍ ---- */
-.cooling-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 24px;
-}
-@media (min-width: 480px) {
-  .cooling-grid { grid-template-columns: repeat(3, 1fr); }
-}
-.cooling-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 12px;
-}
-.cooling-card__icon  { font-size: 22px; margin-bottom: 6px; }
-.cooling-card__name  { font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
-.cooling-card__desc  { font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; line-height: 1.4; }
-.cooling-card__for   { font-size: 11px; color: var(--accent); font-weight: 600; }
 
 /* ---- SHAPE TOGGLE ---- */
 .shape-toggle {
