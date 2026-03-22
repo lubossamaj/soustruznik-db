@@ -258,6 +258,91 @@
             </div>
           </div>
 
+          <!-- KALKULAČKA VÁHY -->
+          <h3 class="subsection-heading">Kalkulačka váhy materiálu</h3>
+          <div class="calc-card">
+            <div class="calc-card__title">⚖️ Výpočet hmotnosti</div>
+
+            <!-- Tvar -->
+            <div class="form-group" style="margin-bottom:12px">
+              <label class="form-label">Tvar polotovaru</label>
+              <div class="shape-toggle">
+                <button
+                  class="shape-btn"
+                  :class="{ 'shape-btn--active': weight.shape === 'round' }"
+                  @click="weight.shape = 'round'"
+                  type="button"
+                >⬤ Kruhová tyč</button>
+                <button
+                  class="shape-btn"
+                  :class="{ 'shape-btn--active': weight.shape === 'rect' }"
+                  @click="weight.shape = 'rect'"
+                  type="button"
+                >▬ Kvádr</button>
+              </div>
+            </div>
+
+            <!-- Materiál -->
+            <div class="form-group" style="margin-bottom:12px">
+              <label class="form-label">Materiál</label>
+              <div class="shape-toggle">
+                <button
+                  v-for="m in weightMaterials"
+                  :key="m.id"
+                  class="shape-btn"
+                  :class="{ 'shape-btn--active': weight.material === m.id }"
+                  @click="weight.material = m.id"
+                  type="button"
+                >{{ m.label }}</button>
+              </div>
+              <div class="calc-note" style="margin-top:4px">Hustota: {{ weightMaterials.find(m=>m.id===weight.material)?.rho }} kg/m³</div>
+            </div>
+
+            <!-- Rozměry – kruhová tyč -->
+            <div v-if="weight.shape === 'round'" class="calc-grid">
+              <div class="form-group">
+                <label class="form-label">Průměr d [mm]</label>
+                <input v-model.number="weight.d" type="number" inputmode="decimal" class="form-control" placeholder="např. 50" min="0.1" step="0.1" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Délka L [mm]</label>
+                <input v-model.number="weight.L" type="number" inputmode="decimal" class="form-control" placeholder="např. 1000" min="0.1" step="1" />
+              </div>
+            </div>
+
+            <!-- Rozměry – kvádr -->
+            <div v-if="weight.shape === 'rect'">
+              <div class="calc-grid">
+                <div class="form-group">
+                  <label class="form-label">Šířka a [mm]</label>
+                  <input v-model.number="weight.a" type="number" inputmode="decimal" class="form-control" placeholder="např. 50" min="0.1" step="0.1" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Výška b [mm]</label>
+                  <input v-model.number="weight.b" type="number" inputmode="decimal" class="form-control" placeholder="např. 50" min="0.1" step="0.1" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Délka L [mm]</label>
+                <input v-model.number="weight.L" type="number" inputmode="decimal" class="form-control" placeholder="např. 1000" min="0.1" step="1" />
+              </div>
+            </div>
+
+            <!-- Výsledek -->
+            <div v-if="calcWeight !== null" class="calc-result" style="flex-direction:column;align-items:flex-start;gap:4px">
+              <div style="display:flex;align-items:center;gap:10px;width:100%">
+                <span class="calc-result__label">Hmotnost =</span>
+                <span class="calc-result__value">{{ calcWeight.kg }} kg</span>
+              </div>
+              <div style="font-size:12px;color:var(--text-muted)">
+                Objem: {{ calcWeight.cm3 }} cm³ &nbsp;|&nbsp; {{ calcWeight.g }} g
+              </div>
+            </div>
+            <div v-else class="calc-result calc-result--empty">
+              Zadej rozměry pro výpočet
+            </div>
+          </div>
+
           <!-- TABULKA DLE MATERIÁLU -->
           <h3 class="subsection-heading">Doporučené řezné podmínky dle materiálu</h3>
           <div class="table-scroll">
@@ -489,6 +574,38 @@ const calcFeed = computed(() => {
   const n = calc.n || calcRpm.value
   if (!calc.vf || !n || n <= 0) return null
   return (calc.vf / n).toFixed(3)
+})
+
+// ---- KALKULAČKA VÁHY ----
+const weight = reactive({ shape: 'round', material: 'ocel', d: null, L: null, a: null, b: null })
+
+const weightMaterials = [
+  { id: 'ocel',  label: 'Ocel',  rho: 7850 },
+  { id: 'nerez', label: 'Nerez', rho: 7900 },
+  { id: 'med',   label: 'Měď',   rho: 8900 },
+]
+
+const calcWeight = computed(() => {
+  const mat = weightMaterials.find(m => m.id === weight.material)
+  if (!mat) return null
+  const rho = mat.rho // kg/m³
+
+  let volumeMm3 = null
+  if (weight.shape === 'round') {
+    if (!weight.d || !weight.L || weight.d <= 0 || weight.L <= 0) return null
+    volumeMm3 = Math.PI / 4 * weight.d ** 2 * weight.L
+  } else {
+    if (!weight.a || !weight.b || !weight.L || weight.a <= 0 || weight.b <= 0 || weight.L <= 0) return null
+    volumeMm3 = weight.a * weight.b * weight.L
+  }
+
+  const volumeM3 = volumeMm3 / 1e9
+  const kg = volumeM3 * rho
+  return {
+    kg:  kg >= 0.1  ? kg.toFixed(3)  : kg.toFixed(4),
+    g:   (kg * 1000).toFixed(1),
+    cm3: (volumeMm3 / 1000).toFixed(2),
+  }
 })
 
 // ---- DATA ----
@@ -1024,6 +1141,34 @@ const coolingFluids = [
 .cooling-card__name  { font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
 .cooling-card__desc  { font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; line-height: 1.4; }
 .cooling-card__for   { font-size: 11px; color: var(--accent); font-weight: 600; }
+
+/* ---- SHAPE TOGGLE ---- */
+.shape-toggle {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.shape-btn {
+  flex: 1;
+  min-width: 80px;
+  padding: 9px 12px;
+  background: var(--bg-secondary);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+}
+.shape-btn--active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-light);
+}
 
 /* ---- INFO BOX ---- */
 .info-box {
