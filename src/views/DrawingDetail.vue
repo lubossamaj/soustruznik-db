@@ -93,7 +93,7 @@
           <button class="btn btn-secondary btn-block" type="button" @click="goToEdit">
             ✏️ Upravit výkres
           </button>
-          <button class="btn btn-danger btn-block" type="button" @click="confirmDelete = true">
+          <button class="btn btn-danger btn-block" type="button" @click="confirmDelete = 1">
             🗑 Smazat výkres
           </button>
         </section>
@@ -155,21 +155,42 @@
       </div>
     </transition>
 
-    <!-- POTVRZOVACÍ DIALOG SMAZÁNÍ -->
+    <!-- POTVRZOVACÍ DIALOG SMAZÁNÍ – krok 1 -->
     <transition name="fade">
-      <div v-if="confirmDelete" class="modal-overlay" @click.self="confirmDelete = false">
+      <div v-if="confirmDelete === 1" class="modal-overlay" @click.self="confirmDelete = 0">
         <div class="modal">
           <div class="modal__title">Smazat výkres?</div>
           <div class="modal__text">
-            Opravdu chcete smazat výkres č. <strong>{{ drawing?.drawingNumber }}</strong>
-            včetně všech operací? Tuto akci nelze vrátit zpět.
+            Chcete smazat výkres č. <strong>{{ drawing?.drawingNumber }}</strong>
+            včetně všech operací?
           </div>
           <div class="modal__actions">
-            <button class="btn btn-ghost" type="button" @click="confirmDelete = false">
+            <button class="btn btn-ghost" type="button" @click="confirmDelete = 0">
+              Zrušit
+            </button>
+            <button class="btn btn-danger" type="button" @click="confirmDelete = 2">
+              Ano, smazat
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- POTVRZOVACÍ DIALOG SMAZÁNÍ – krok 2 -->
+    <transition name="fade">
+      <div v-if="confirmDelete === 2" class="modal-overlay" @click.self="confirmDelete = 0">
+        <div class="modal">
+          <div class="modal__title">⚠️ Opravdu smazat?</div>
+          <div class="modal__text">
+            Toto je poslední varování. Výkres č. <strong>{{ drawing?.drawingNumber }}</strong>
+            bude trvale smazán. Tuto akci nelze vrátit zpět.
+          </div>
+          <div class="modal__actions">
+            <button class="btn btn-ghost" type="button" @click="confirmDelete = 0">
               Zrušit
             </button>
             <button class="btn btn-danger" type="button" @click="deleteDrawing">
-              Smazat
+              Smazat natrvalo
             </button>
           </div>
         </div>
@@ -217,8 +238,8 @@ function onTouchEnd(e) {
   }
 }
 
-// Stav potvrzovacího dialogu smazání
-const confirmDelete = ref(false)
+// Stav potvrzovacího dialogu smazání (0 = skryto, 1 = krok 1, 2 = krok 2)
+const confirmDelete = ref(0)
 
 function goBack() {
   router.push({ name: 'DrawingList' })
@@ -229,6 +250,7 @@ function goToEdit() {
 }
 
 function deleteDrawing() {
+  confirmDelete.value = 0
   store.deleteDrawing(route.params.id)
   router.push({ name: 'DrawingList' })
 }
