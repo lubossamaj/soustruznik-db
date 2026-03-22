@@ -4,8 +4,7 @@
     <header class="app-header">
       <div class="app-header__inner">
         <span class="app-header__title">
-          ⚙ Soustružník DB
-          <small class="app-header__subtitle"> v1.0</small>
+          ⚙ Soustružník
         </span>
         <button class="kucharka-btn" @click="router.push({ name: 'Kucharka' })" title="Soustružnická kuchařka">
           <span class="kucharka-btn__icon">🧑‍🍳</span>
