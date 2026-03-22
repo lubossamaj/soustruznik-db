@@ -7,6 +7,10 @@
           ⚙ Soustružník DB
           <small class="app-header__subtitle"> v1.0</small>
         </span>
+        <button class="kucharka-btn" @click="router.push({ name: 'Kucharka' })" title="Soustružnická kuchařka">
+          <span class="kucharka-btn__icon">🧑‍🍳</span>
+          <span class="kucharka-btn__label">Kuchařka</span>
+        </button>
       </div>
     </header>
 
@@ -123,6 +127,37 @@ function goToNew() {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
+}
+
+/* Tlačítko Kuchařka v headeru */
+.kucharka-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  background: none;
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-sm);
+  color: var(--accent);
+  cursor: pointer;
+  padding: 5px 10px;
+  font-family: var(--font);
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s;
+}
+.kucharka-btn:active {
+  background: var(--accent-light);
+}
+.kucharka-btn__icon {
+  font-size: 18px;
+  line-height: 1;
+}
+.kucharka-btn__label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
 }
 
 .drawings-list {

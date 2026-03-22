@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import DrawingList from '../views/DrawingList.vue'
 import DrawingDetail from '../views/DrawingDetail.vue'
 import DrawingEdit from '../views/DrawingEdit.vue'
+import KucharkaView from '../views/KucharkaView.vue'
 
 const routes = [
   {
@@ -9,6 +10,12 @@ const routes = [
     path: '/',
     name: 'DrawingList',
     component: DrawingList,
+  },
+  {
+    // Soustružnická kuchařka
+    path: '/kucharka',
+    name: 'Kucharka',
+    component: KucharkaView,
   },
   {
     // Nový výkres – musí být před /:id aby se "new" netraktovalo jako ID
