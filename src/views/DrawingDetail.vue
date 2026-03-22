@@ -101,19 +101,56 @@
       </div>
     </main>
 
-    <!-- FULLSCREEN FOTKA -->
+    <!-- FULLSCREEN GALERIE -->
     <transition name="fade">
       <div
         v-if="showFullscreen"
         class="photo-fullscreen"
-        @click="showFullscreen = false"
         role="dialog"
-        aria-label="Fullscreen fotka výkresu"
+        aria-label="Galerie fotek výkresu"
+        @touchstart.passive="onTouchStart"
+        @touchend.passive="onTouchEnd"
       >
-        <img :src="drawing.photos[fullscreenIndex]" :alt="`Fotka ${fullscreenIndex + 1}`" />
-        <div class="photo-fullscreen__hint">
-          <span v-if="drawing.photos.length > 1">{{ fullscreenIndex + 1 }} / {{ drawing.photos.length }} · </span>
-          Klepněte pro zavření
+        <!-- Křížek zavřít -->
+        <button class="photo-fullscreen__close" @click="showFullscreen = false" aria-label="Zavřít">✕</button>
+
+        <!-- Počítadlo -->
+        <div v-if="drawing.photos.length > 1" class="photo-fullscreen__counter">
+          {{ fullscreenIndex + 1 }} / {{ drawing.photos.length }}
+        </div>
+
+        <!-- Fotka -->
+        <img
+          :src="drawing.photos[fullscreenIndex]"
+          :alt="`Fotka ${fullscreenIndex + 1}`"
+          @click="showFullscreen = false"
+        />
+
+        <!-- Šipka vlevo -->
+        <button
+          v-if="drawing.photos.length > 1 && fullscreenIndex > 0"
+          class="photo-fullscreen__arrow photo-fullscreen__arrow--left"
+          @click.stop="fullscreenIndex--"
+          aria-label="Předchozí fotka"
+        >‹</button>
+
+        <!-- Šipka vpravo -->
+        <button
+          v-if="drawing.photos.length > 1 && fullscreenIndex < drawing.photos.length - 1"
+          class="photo-fullscreen__arrow photo-fullscreen__arrow--right"
+          @click.stop="fullscreenIndex++"
+          aria-label="Další fotka"
+        >›</button>
+
+        <!-- Tečky -->
+        <div v-if="drawing.photos.length > 1" class="photo-fullscreen__dots">
+          <span
+            v-for="(_, i) in drawing.photos"
+            :key="i"
+            class="photo-fullscreen__dot"
+            :class="{ 'photo-fullscreen__dot--active': i === fullscreenIndex }"
+            @click.stop="fullscreenIndex = i"
+          />
         </div>
       </div>
     </transition>
@@ -161,6 +198,23 @@ const fullscreenIndex = ref(0)
 function openFullscreen(idx) {
   fullscreenIndex.value = idx
   showFullscreen.value = true
+}
+
+// Swipe gesta
+let touchStartX = 0
+
+function onTouchStart(e) {
+  touchStartX = e.touches[0].clientX
+}
+
+function onTouchEnd(e) {
+  const dx = e.changedTouches[0].clientX - touchStartX
+  const photos = drawing.value?.photos ?? []
+  if (dx < -50 && fullscreenIndex.value < photos.length - 1) {
+    fullscreenIndex.value++
+  } else if (dx > 50 && fullscreenIndex.value > 0) {
+    fullscreenIndex.value--
+  }
 }
 
 // Stav potvrzovacího dialogu smazání
@@ -328,14 +382,83 @@ function formatDate(isoString) {
   line-height: 1.3;
 }
 
-/* Fullscreen hint */
-.photo-fullscreen__hint {
+/* Fullscreen – křížek */
+.photo-fullscreen__close {
   position: absolute;
-  bottom: 16px;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.6);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Fullscreen – počítadlo */
+.photo-fullscreen__counter {
+  position: absolute;
+  top: 20px;
   left: 0;
   right: 0;
   text-align: center;
-  color: rgba(255,255,255,0.5);
-  font-size: 13px;
+  color: rgba(255,255,255,0.7);
+  font-size: 14px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+/* Fullscreen – šipky */
+.photo-fullscreen__arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 64px;
+  background: rgba(0,0,0,0.4);
+  border: none;
+  color: #fff;
+  font-size: 36px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  -webkit-tap-highlight-color: transparent;
+  z-index: 10;
+}
+
+.photo-fullscreen__arrow--left  { left: 8px; }
+.photo-fullscreen__arrow--right { right: 8px; }
+
+/* Fullscreen – tečky */
+.photo-fullscreen__dots {
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.photo-fullscreen__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.35);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.photo-fullscreen__dot--active {
+  background: #fff;
 }
 </style>
