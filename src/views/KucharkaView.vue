@@ -67,39 +67,100 @@
 
         <!-- ==================== ZÁVITY ==================== -->
         <section v-if="activeTab === 'zavity'">
-          <h2 class="section-heading">Metrické závity – ISO 724</h2>
-          <p class="section-note">Hodnoty dle ČSN EN ISO 724 • rozměry v mm</p>
+          <h2 class="section-heading">Kalkulátor závitů</h2>
+          <p class="section-note">Vyberte typ a velikost závitu – zobrazí se všechny rozměry pro soustružení</p>
 
-          <div class="table-scroll">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Závit</th>
-                  <th>Rozteč<br /><small>p [mm]</small></th>
-                  <th>Střední Ø<br /><small>d₂ [mm]</small></th>
-                  <th>Malý Ø<br /><small>d₁ [mm]</small></th>
-                  <th>Vrták<br /><small>[mm]</small></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="t in threads" :key="t.d" :class="{ 'tr-highlight': t.hi }">
-                  <td class="td-name">{{ t.d }}</td>
-                  <td>{{ t.p }}</td>
-                  <td>{{ t.d2 }}</td>
-                  <td>{{ t.d1 }}</td>
-                  <td class="td-drill">{{ t.dr }}</td>
-                </tr>
-              </tbody>
-            </table>
+          <!-- Výběr typu závitu -->
+          <div class="form-group">
+            <label class="form-label">Typ závitu</label>
+            <div class="shape-toggle" style="flex-wrap:wrap">
+              <button
+                v-for="type in threadTypes"
+                :key="type.id"
+                class="shape-btn"
+                :class="{ 'shape-btn--active': threadCalc.type === type.id }"
+                @click="threadCalc.type = type.id; threadCalc.size = null"
+                type="button"
+              >{{ type.id }}</button>
+            </div>
+            <div class="calc-note" style="margin-top:6px">
+              {{ threadTypes.find(t => t.id === threadCalc.type)?.info }}
+            </div>
           </div>
 
-          <div class="info-box" style="margin-top:20px">
-            <div class="info-box__title">💡 Výpočet průměru vrtáku</div>
-            <div class="info-box__text">
-              Vrták = jmenovitý průměr − rozteč<br />
-              <code>d<sub>vrták</sub> = D − p</code><br />
-              Příklad: M10×1,5 → vrták = 10 − 1,5 = <strong>8,5 mm</strong>
+          <!-- Výběr velikosti -->
+          <div class="form-group">
+            <label class="form-label">Velikost</label>
+            <select v-model="threadCalc.size" class="form-control">
+              <option :value="null">— vyberte velikost —</option>
+              <option v-for="t in threadData[threadCalc.type]" :key="t.label" :value="t">
+                {{ t.label }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Výsledky -->
+          <div v-if="threadCalc.size" class="thread-result">
+            <div class="thread-result__title">
+              {{ threadCalc.size.label }}
+              <span class="thread-result__sub">{{ threadTypes.find(t=>t.id===threadCalc.type)?.short }}</span>
             </div>
+
+            <div class="thread-dims">
+              <div class="thread-dim thread-dim--outer">
+                <div class="thread-dim__icon">⌀</div>
+                <div class="thread-dim__info">
+                  <div class="thread-dim__label">Vnější průměr d</div>
+                  <div class="thread-dim__hint">Průměr tyče před řezáním závitu</div>
+                </div>
+                <div class="thread-dim__val">{{ threadCalc.size.d }} mm</div>
+              </div>
+              <div class="thread-dim thread-dim--pitch">
+                <div class="thread-dim__icon">≈</div>
+                <div class="thread-dim__info">
+                  <div class="thread-dim__label">Střední průměr d₂</div>
+                  <div class="thread-dim__hint">Střední průměr závitového profilu</div>
+                </div>
+                <div class="thread-dim__val">{{ threadCalc.size.d2 }} mm</div>
+              </div>
+              <div class="thread-dim thread-dim--minor">
+                <div class="thread-dim__icon">○</div>
+                <div class="thread-dim__info">
+                  <div class="thread-dim__label">Malý průměr d₁</div>
+                  <div class="thread-dim__hint">Průměr dna závitu šroubu (cíl soustružení)</div>
+                </div>
+                <div class="thread-dim__val">{{ threadCalc.size.d1 }} mm</div>
+              </div>
+              <div class="thread-dim thread-dim--drill">
+                <div class="thread-dim__icon">✦</div>
+                <div class="thread-dim__info">
+                  <div class="thread-dim__label">Průměr vrtáku</div>
+                  <div class="thread-dim__hint">Vrtat otvor před řezáním závitu matice</div>
+                </div>
+                <div class="thread-dim__val">{{ threadCalc.size.drill }} mm</div>
+              </div>
+              <div class="thread-dim thread-dim--pitch-val">
+                <div class="thread-dim__icon">↔</div>
+                <div class="thread-dim__info">
+                  <div class="thread-dim__label">Rozteč p</div>
+                  <div class="thread-dim__hint">Nastavení převodovky soustruhu</div>
+                </div>
+                <div class="thread-dim__val">{{ threadCalc.size.p }}</div>
+              </div>
+              <div class="thread-dim thread-dim--depth">
+                <div class="thread-dim__icon">↕</div>
+                <div class="thread-dim__info">
+                  <div class="thread-dim__label">Hloubka závitu h</div>
+                  <div class="thread-dim__hint">Celková hloubka záběru nože</div>
+                </div>
+                <div class="thread-dim__val">{{ threadCalc.size.h }} mm</div>
+              </div>
+            </div>
+          </div>
+
+          <div v-else class="thread-empty">
+            <div class="thread-empty__icon">🔩</div>
+            <div>Vyberte velikost závitu pro zobrazení rozměrů</div>
           </div>
         </section>
 
@@ -571,41 +632,133 @@ const calcWeight = computed(() => {
   }
 })
 
-// ---- DATA ----
+// ---- KALKULÁTOR ZÁVITŮ ----
+const threadCalc = reactive({ type: 'M', size: null })
 
-const threads = [
-  { d:'M1',   p:'0,25', d2:'0,838', d1:'0,693', dr:'0,75' },
-  { d:'M1,2', p:'0,25', d2:'1,038', d1:'0,893', dr:'0,95' },
-  { d:'M1,4', p:'0,3',  d2:'1,205', d1:'1,032', dr:'1,1'  },
-  { d:'M1,6', p:'0,35', d2:'1,373', d1:'1,171', dr:'1,25' },
-  { d:'M2',   p:'0,4',  d2:'1,740', d1:'1,509', dr:'1,6'  },
-  { d:'M2,5', p:'0,45', d2:'2,208', d1:'1,948', dr:'2,05' },
-  { d:'M3',   p:'0,5',  d2:'2,675', d1:'2,387', dr:'2,5',  hi:true },
-  { d:'M4',   p:'0,7',  d2:'3,545', d1:'3,141', dr:'3,3',  hi:true },
-  { d:'M5',   p:'0,8',  d2:'4,480', d1:'4,019', dr:'4,2',  hi:true },
-  { d:'M6',   p:'1,0',  d2:'5,350', d1:'4,917', dr:'5,0',  hi:true },
-  { d:'M8',   p:'1,25', d2:'7,188', d1:'6,647', dr:'6,8',  hi:true },
-  { d:'M10',  p:'1,5',  d2:'9,026', d1:'8,376', dr:'8,5',  hi:true },
-  { d:'M12',  p:'1,75', d2:'10,863',d1:'10,106',dr:'10,2', hi:true },
-  { d:'M14',  p:'2,0',  d2:'12,701',d1:'11,835',dr:'12,0' },
-  { d:'M16',  p:'2,0',  d2:'14,701',d1:'13,835',dr:'14,0', hi:true },
-  { d:'M18',  p:'2,5',  d2:'16,376',d1:'15,294',dr:'15,5' },
-  { d:'M20',  p:'2,5',  d2:'18,376',d1:'17,294',dr:'17,5', hi:true },
-  { d:'M22',  p:'2,5',  d2:'20,376',d1:'19,294',dr:'19,5' },
-  { d:'M24',  p:'3,0',  d2:'22,051',d1:'20,752',dr:'21,0', hi:true },
-  { d:'M27',  p:'3,0',  d2:'25,051',d1:'23,752',dr:'24,0' },
-  { d:'M30',  p:'3,5',  d2:'27,727',d1:'26,211',dr:'26,5', hi:true },
-  { d:'M33',  p:'3,5',  d2:'30,727',d1:'29,211',dr:'29,5' },
-  { d:'M36',  p:'4,0',  d2:'33,402',d1:'31,670',dr:'32,0', hi:true },
-  { d:'M39',  p:'4,0',  d2:'36,402',d1:'34,670',dr:'35,0' },
-  { d:'M42',  p:'4,5',  d2:'39,077',d1:'37,129',dr:'37,5' },
-  { d:'M45',  p:'4,5',  d2:'42,077',d1:'40,129',dr:'40,5' },
-  { d:'M48',  p:'5,0',  d2:'44,752',d1:'42,587',dr:'43,0', hi:true },
-  { d:'M52',  p:'5,0',  d2:'48,752',d1:'46,587',dr:'47,0' },
-  { d:'M56',  p:'5,5',  d2:'52,428',d1:'50,046',dr:'50,5' },
-  { d:'M60',  p:'5,5',  d2:'56,428',d1:'54,046',dr:'54,5' },
-  { d:'M64',  p:'6,0',  d2:'60,103',d1:'57,505',dr:'58,0', hi:true },
+const threadTypes = [
+  { id:'M',   short:'Metrický ISO',      info:'ISO 724 • úhel 60° • rozteč v mm' },
+  { id:'W',   short:'Whitworthův (BSW)', info:'BSW • úhel 55° • rozteč v TPI (závitů/palec)' },
+  { id:'G',   short:'Trubkový BSP',      info:'ISO 228 • úhel 55° • označení v palcích, rozměry v mm' },
+  { id:'Tr',  short:'Trapézový ISO',     info:'ISO 2904 • úhel 30° • pro pohybové šrouby' },
+  { id:'UNC', short:'Americký UNC',      info:'ASME B1.1 • úhel 60° • rozteč v TPI' },
 ]
+
+const threadData = {
+  M: [
+    { label:'M1',    d:'1,000',  p:'0,25 mm',  d2:'0,838',  d1:'0,693',  drill:'0,75',  h:'0,153' },
+    { label:'M1,2',  d:'1,200',  p:'0,25 mm',  d2:'1,038',  d1:'0,893',  drill:'0,95',  h:'0,153' },
+    { label:'M1,4',  d:'1,400',  p:'0,3 mm',   d2:'1,205',  d1:'1,032',  drill:'1,10',  h:'0,184' },
+    { label:'M1,6',  d:'1,600',  p:'0,35 mm',  d2:'1,373',  d1:'1,171',  drill:'1,25',  h:'0,215' },
+    { label:'M2',    d:'2,000',  p:'0,4 mm',   d2:'1,740',  d1:'1,509',  drill:'1,60',  h:'0,245' },
+    { label:'M2,5',  d:'2,500',  p:'0,45 mm',  d2:'2,208',  d1:'1,948',  drill:'2,05',  h:'0,276' },
+    { label:'M3',    d:'3,000',  p:'0,5 mm',   d2:'2,675',  d1:'2,387',  drill:'2,50',  h:'0,307' },
+    { label:'M4',    d:'4,000',  p:'0,7 mm',   d2:'3,545',  d1:'3,141',  drill:'3,30',  h:'0,429' },
+    { label:'M5',    d:'5,000',  p:'0,8 mm',   d2:'4,480',  d1:'4,019',  drill:'4,20',  h:'0,491' },
+    { label:'M6',    d:'6,000',  p:'1,0 mm',   d2:'5,350',  d1:'4,917',  drill:'5,00',  h:'0,613' },
+    { label:'M8',    d:'8,000',  p:'1,25 mm',  d2:'7,188',  d1:'6,647',  drill:'6,80',  h:'0,767' },
+    { label:'M10',   d:'10,000', p:'1,5 mm',   d2:'9,026',  d1:'8,376',  drill:'8,50',  h:'0,920' },
+    { label:'M12',   d:'12,000', p:'1,75 mm',  d2:'10,863', d1:'10,106', drill:'10,20', h:'1,074' },
+    { label:'M14',   d:'14,000', p:'2,0 mm',   d2:'12,701', d1:'11,835', drill:'12,00', h:'1,227' },
+    { label:'M16',   d:'16,000', p:'2,0 mm',   d2:'14,701', d1:'13,835', drill:'14,00', h:'1,227' },
+    { label:'M18',   d:'18,000', p:'2,5 mm',   d2:'16,376', d1:'15,294', drill:'15,50', h:'1,534' },
+    { label:'M20',   d:'20,000', p:'2,5 mm',   d2:'18,376', d1:'17,294', drill:'17,50', h:'1,534' },
+    { label:'M22',   d:'22,000', p:'2,5 mm',   d2:'20,376', d1:'19,294', drill:'19,50', h:'1,534' },
+    { label:'M24',   d:'24,000', p:'3,0 mm',   d2:'22,051', d1:'20,752', drill:'21,00', h:'1,840' },
+    { label:'M27',   d:'27,000', p:'3,0 mm',   d2:'25,051', d1:'23,752', drill:'24,00', h:'1,840' },
+    { label:'M30',   d:'30,000', p:'3,5 mm',   d2:'27,727', d1:'26,211', drill:'26,50', h:'2,147' },
+    { label:'M33',   d:'33,000', p:'3,5 mm',   d2:'30,727', d1:'29,211', drill:'29,50', h:'2,147' },
+    { label:'M36',   d:'36,000', p:'4,0 mm',   d2:'33,402', d1:'31,670', drill:'32,00', h:'2,454' },
+    { label:'M39',   d:'39,000', p:'4,0 mm',   d2:'36,402', d1:'34,670', drill:'35,00', h:'2,454' },
+    { label:'M42',   d:'42,000', p:'4,5 mm',   d2:'39,077', d1:'37,129', drill:'37,50', h:'2,760' },
+    { label:'M45',   d:'45,000', p:'4,5 mm',   d2:'42,077', d1:'40,129', drill:'40,50', h:'2,760' },
+    { label:'M48',   d:'48,000', p:'5,0 mm',   d2:'44,752', d1:'42,587', drill:'43,00', h:'3,067' },
+    { label:'M52',   d:'52,000', p:'5,0 mm',   d2:'48,752', d1:'46,587', drill:'47,00', h:'3,067' },
+    { label:'M56',   d:'56,000', p:'5,5 mm',   d2:'52,428', d1:'50,046', drill:'50,50', h:'3,374' },
+    { label:'M60',   d:'60,000', p:'5,5 mm',   d2:'56,428', d1:'54,046', drill:'54,50', h:'3,374' },
+    { label:'M64',   d:'64,000', p:'6,0 mm',   d2:'60,103', d1:'57,505', drill:'58,00', h:'3,680' },
+  ],
+  W: [
+    { label:'W 1/8"',   d:'3,175',  p:'0,635 mm (40 TPI)', d2:'2,859',  d1:'2,543',  drill:'2,50',  h:'0,320' },
+    { label:'W 3/16"',  d:'4,762',  p:'1,058 mm (24 TPI)', d2:'4,228',  d1:'3,694',  drill:'3,70',  h:'0,534' },
+    { label:'W 1/4"',   d:'6,350',  p:'1,270 mm (20 TPI)', d2:'5,664',  d1:'4,978',  drill:'5,00',  h:'0,640' },
+    { label:'W 5/16"',  d:'7,938',  p:'1,411 mm (18 TPI)', d2:'7,097',  d1:'6,255',  drill:'6,20',  h:'0,713' },
+    { label:'W 3/8"',   d:'9,525',  p:'1,588 mm (16 TPI)', d2:'8,509',  d1:'7,493',  drill:'7,50',  h:'0,801' },
+    { label:'W 7/16"',  d:'11,113', p:'1,814 mm (14 TPI)', d2:'9,901',  d1:'8,688',  drill:'8,70',  h:'0,914' },
+    { label:'W 1/2"',   d:'12,700', p:'2,117 mm (12 TPI)', d2:'11,299', d1:'9,898',  drill:'9,90',  h:'1,067' },
+    { label:'W 9/16"',  d:'14,288', p:'2,117 mm (12 TPI)', d2:'12,887', d1:'11,486', drill:'11,50', h:'1,067' },
+    { label:'W 5/8"',   d:'15,875', p:'2,309 mm (11 TPI)', d2:'14,238', d1:'12,601', drill:'12,60', h:'1,164' },
+    { label:'W 3/4"',   d:'19,050', p:'2,540 mm (10 TPI)', d2:'17,100', d1:'15,150', drill:'15,00', h:'1,281' },
+    { label:'W 7/8"',   d:'22,225', p:'2,822 mm (9 TPI)',  d2:'19,975', d1:'17,724', drill:'17,50', h:'1,422' },
+    { label:'W 1"',     d:'25,400', p:'3,175 mm (8 TPI)',  d2:'22,740', d1:'20,080', drill:'20,00', h:'1,600' },
+    { label:'W 1 1/4"', d:'31,750', p:'3,629 mm (7 TPI)',  d2:'28,586', d1:'25,421', drill:'25,50', h:'1,829' },
+    { label:'W 1 1/2"', d:'38,100', p:'4,233 mm (6 TPI)',  d2:'34,323', d1:'30,546', drill:'30,50', h:'2,133' },
+    { label:'W 1 3/4"', d:'44,450', p:'5,080 mm (5 TPI)',  d2:'39,879', d1:'35,309', drill:'35,50', h:'2,559' },
+    { label:'W 2"',     d:'50,800', p:'5,080 mm (5 TPI)',  d2:'46,229', d1:'41,659', drill:'42,00', h:'2,559' },
+  ],
+  G: [
+    { label:'G 1/8"',   d:'9,728',  p:'0,907 mm (28 TPI)', d2:'9,147',  d1:'8,566',  drill:'8,50',  h:'0,581' },
+    { label:'G 1/4"',   d:'13,157', p:'1,337 mm (19 TPI)', d2:'12,301', d1:'11,445', drill:'11,50', h:'0,856' },
+    { label:'G 3/8"',   d:'16,662', p:'1,337 mm (19 TPI)', d2:'15,806', d1:'14,950', drill:'15,00', h:'0,856' },
+    { label:'G 1/2"',   d:'20,955', p:'1,814 mm (14 TPI)', d2:'19,793', d1:'18,631', drill:'18,60', h:'1,162' },
+    { label:'G 3/4"',   d:'26,441', p:'1,814 mm (14 TPI)', d2:'25,279', d1:'24,117', drill:'24,00', h:'1,162' },
+    { label:'G 1"',     d:'33,249', p:'2,309 mm (11 TPI)', d2:'31,770', d1:'30,291', drill:'30,00', h:'1,479' },
+    { label:'G 1 1/4"', d:'41,910', p:'2,309 mm (11 TPI)', d2:'40,431', d1:'38,952', drill:'39,00', h:'1,479' },
+    { label:'G 1 1/2"', d:'47,803', p:'2,309 mm (11 TPI)', d2:'46,324', d1:'44,845', drill:'44,50', h:'1,479' },
+    { label:'G 2"',     d:'59,614', p:'2,309 mm (11 TPI)', d2:'58,135', d1:'56,656', drill:'56,50', h:'1,479' },
+    { label:'G 2 1/2"', d:'75,184', p:'2,309 mm (11 TPI)', d2:'73,705', d1:'72,226', drill:'72,00', h:'1,479' },
+    { label:'G 3"',     d:'87,884', p:'2,309 mm (11 TPI)', d2:'86,405', d1:'84,926', drill:'85,00', h:'1,479' },
+  ],
+  Tr: [
+    { label:'Tr 8×1,5',  d:'8,000',  p:'1,5 mm',  d2:'7,250',  d1:'6,200',  drill:'6,50',  h:'0,900' },
+    { label:'Tr 10×2',   d:'10,000', p:'2,0 mm',  d2:'9,000',  d1:'7,500',  drill:'8,00',  h:'1,250' },
+    { label:'Tr 12×2',   d:'12,000', p:'2,0 mm',  d2:'11,000', d1:'9,500',  drill:'10,00', h:'1,250' },
+    { label:'Tr 14×2',   d:'14,000', p:'2,0 mm',  d2:'13,000', d1:'11,500', drill:'12,00', h:'1,250' },
+    { label:'Tr 16×2',   d:'16,000', p:'2,0 mm',  d2:'15,000', d1:'13,500', drill:'14,00', h:'1,250' },
+    { label:'Tr 16×4',   d:'16,000', p:'4,0 mm',  d2:'14,000', d1:'11,500', drill:'12,00', h:'2,250' },
+    { label:'Tr 18×2',   d:'18,000', p:'2,0 mm',  d2:'17,000', d1:'15,500', drill:'16,00', h:'1,250' },
+    { label:'Tr 18×4',   d:'18,000', p:'4,0 mm',  d2:'16,000', d1:'13,500', drill:'14,00', h:'2,250' },
+    { label:'Tr 20×2',   d:'20,000', p:'2,0 mm',  d2:'19,000', d1:'17,500', drill:'18,00', h:'1,250' },
+    { label:'Tr 20×4',   d:'20,000', p:'4,0 mm',  d2:'18,000', d1:'15,500', drill:'16,00', h:'2,250' },
+    { label:'Tr 22×3',   d:'22,000', p:'3,0 mm',  d2:'20,500', d1:'18,500', drill:'19,00', h:'1,750' },
+    { label:'Tr 22×5',   d:'22,000', p:'5,0 mm',  d2:'19,500', d1:'16,500', drill:'17,00', h:'2,750' },
+    { label:'Tr 24×3',   d:'24,000', p:'3,0 mm',  d2:'22,500', d1:'20,500', drill:'21,00', h:'1,750' },
+    { label:'Tr 24×5',   d:'24,000', p:'5,0 mm',  d2:'21,500', d1:'18,500', drill:'19,00', h:'2,750' },
+    { label:'Tr 26×3',   d:'26,000', p:'3,0 mm',  d2:'24,500', d1:'22,500', drill:'23,00', h:'1,750' },
+    { label:'Tr 26×5',   d:'26,000', p:'5,0 mm',  d2:'23,500', d1:'20,500', drill:'21,00', h:'2,750' },
+    { label:'Tr 28×3',   d:'28,000', p:'3,0 mm',  d2:'26,500', d1:'24,500', drill:'25,00', h:'1,750' },
+    { label:'Tr 28×5',   d:'28,000', p:'5,0 mm',  d2:'25,500', d1:'22,500', drill:'23,00', h:'2,750' },
+    { label:'Tr 30×3',   d:'30,000', p:'3,0 mm',  d2:'28,500', d1:'26,500', drill:'27,00', h:'1,750' },
+    { label:'Tr 30×6',   d:'30,000', p:'6,0 mm',  d2:'27,000', d1:'23,500', drill:'24,00', h:'3,250' },
+    { label:'Tr 32×3',   d:'32,000', p:'3,0 mm',  d2:'30,500', d1:'28,500', drill:'29,00', h:'1,750' },
+    { label:'Tr 32×6',   d:'32,000', p:'6,0 mm',  d2:'29,000', d1:'25,500', drill:'26,00', h:'3,250' },
+    { label:'Tr 36×3',   d:'36,000', p:'3,0 mm',  d2:'34,500', d1:'32,500', drill:'33,00', h:'1,750' },
+    { label:'Tr 36×6',   d:'36,000', p:'6,0 mm',  d2:'33,000', d1:'29,500', drill:'30,00', h:'3,250' },
+    { label:'Tr 40×3',   d:'40,000', p:'3,0 mm',  d2:'38,500', d1:'36,500', drill:'37,00', h:'1,750' },
+    { label:'Tr 40×7',   d:'40,000', p:'7,0 mm',  d2:'36,500', d1:'32,500', drill:'33,00', h:'3,750' },
+    { label:'Tr 44×7',   d:'44,000', p:'7,0 mm',  d2:'40,500', d1:'36,500', drill:'37,00', h:'3,750' },
+    { label:'Tr 48×8',   d:'48,000', p:'8,0 mm',  d2:'44,000', d1:'39,500', drill:'40,00', h:'4,250' },
+    { label:'Tr 52×8',   d:'52,000', p:'8,0 mm',  d2:'48,000', d1:'43,500', drill:'44,00', h:'4,250' },
+    { label:'Tr 60×9',   d:'60,000', p:'9,0 mm',  d2:'55,500', d1:'50,500', drill:'51,00', h:'4,750' },
+  ],
+  UNC: [
+    { label:'UNC #4',    d:'2,845',  p:'0,635 mm (40 TPI)', d2:'2,524',  d1:'2,202',  drill:'2,20',  h:'0,389' },
+    { label:'UNC #6',    d:'3,505',  p:'0,794 mm (32 TPI)', d2:'3,098',  d1:'2,692',  drill:'2,70',  h:'0,406' },
+    { label:'UNC #8',    d:'4,166',  p:'0,794 mm (32 TPI)', d2:'3,759',  d1:'3,353',  drill:'3,40',  h:'0,406' },
+    { label:'UNC #10',   d:'4,826',  p:'1,058 mm (24 TPI)', d2:'4,292',  d1:'3,759',  drill:'3,80',  h:'0,534' },
+    { label:'UNC 1/4"',  d:'6,350',  p:'1,270 mm (20 TPI)', d2:'5,664',  d1:'4,978',  drill:'5,00',  h:'0,686' },
+    { label:'UNC 5/16"', d:'7,938',  p:'1,411 mm (18 TPI)', d2:'7,121',  d1:'6,305',  drill:'6,30',  h:'0,816' },
+    { label:'UNC 3/8"',  d:'9,525',  p:'1,588 mm (16 TPI)', d2:'8,597',  d1:'7,670',  drill:'7,70',  h:'0,928' },
+    { label:'UNC 7/16"', d:'11,113', p:'1,814 mm (14 TPI)', d2:'10,033', d1:'8,952',  drill:'9,00',  h:'1,080' },
+    { label:'UNC 1/2"',  d:'12,700', p:'1,954 mm (13 TPI)', d2:'11,430', d1:'10,160', drill:'10,20', h:'1,270' },
+    { label:'UNC 9/16"', d:'14,288', p:'2,117 mm (12 TPI)', d2:'12,913', d1:'11,537', drill:'11,50', h:'1,375' },
+    { label:'UNC 5/8"',  d:'15,875', p:'2,309 mm (11 TPI)', d2:'14,376', d1:'12,878', drill:'12,90', h:'1,499' },
+    { label:'UNC 3/4"',  d:'19,050', p:'2,540 mm (10 TPI)', d2:'17,399', d1:'15,748', drill:'15,75', h:'1,651' },
+    { label:'UNC 7/8"',  d:'22,225', p:'2,822 mm (9 TPI)',  d2:'20,391', d1:'18,558', drill:'18,50', h:'1,834' },
+    { label:'UNC 1"',    d:'25,400', p:'3,175 mm (8 TPI)',  d2:'23,338', d1:'21,272', drill:'21,30', h:'2,064' },
+    { label:'UNC 1 1/4"',d:'31,750', p:'3,629 mm (7 TPI)',  d2:'29,401', d1:'27,051', drill:'27,00', h:'2,362' },
+    { label:'UNC 1 1/2"',d:'38,100', p:'4,233 mm (6 TPI)',  d2:'35,379', d1:'32,639', drill:'32,50', h:'2,750' },
+  ],
+}
 
 const roughness = [
   { cls:'N1',  ra:'0,1',  rz:'0,5',  color:'#7c3aed', method:'Superfinishing, leštění',          usage:'Ložisková sedla, optika'       },
@@ -889,10 +1042,6 @@ const materials = [
 }
 .data-table thead {
   background: var(--bg-secondary);
-  position: sticky;
-  /* 56px (app-header) + 49px (tabs-nav) = 105px */
-  top: 105px;
-  z-index: 10;
 }
 .data-table th {
   padding: 10px 10px;
@@ -1095,6 +1244,87 @@ const materials = [
   color: var(--accent);
   background: var(--accent-light);
 }
+
+/* ---- THREAD CALCULATOR ---- */
+.thread-result {
+  background: var(--bg-card);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.thread-result__title {
+  background: var(--bg-secondary);
+  padding: 12px 16px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--accent);
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.thread-result__sub {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+.thread-dims {
+  display: flex;
+  flex-direction: column;
+}
+.thread-dim {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.thread-dim:last-child { border-bottom: none; }
+.thread-dim__icon {
+  width: 28px;
+  text-align: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.thread-dim__info {
+  flex: 1;
+  min-width: 0;
+}
+.thread-dim__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.thread-dim__hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+.thread-dim__val {
+  font-size: 15px;
+  font-weight: 700;
+  flex-shrink: 0;
+  text-align: right;
+}
+.thread-dim--outer  .thread-dim__icon, .thread-dim--outer  .thread-dim__val { color: var(--accent); }
+.thread-dim--minor  .thread-dim__icon, .thread-dim--minor  .thread-dim__val { color: #f87171; }
+.thread-dim--drill  .thread-dim__icon, .thread-dim--drill  .thread-dim__val { color: #34d399; }
+.thread-dim--pitch  .thread-dim__icon, .thread-dim--pitch  .thread-dim__val { color: #a78bfa; }
+.thread-dim--pitch-val .thread-dim__val { color: var(--text-secondary); font-size: 13px; }
+.thread-dim--depth     .thread-dim__val { color: var(--text-secondary); font-size: 13px; }
+
+.thread-empty {
+  text-align: center;
+  padding: 36px 16px;
+  color: var(--text-muted);
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.thread-empty__icon { font-size: 40px; opacity: 0.4; }
 
 /* ---- INFO BOX ---- */
 .info-box {
