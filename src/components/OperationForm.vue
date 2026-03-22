@@ -173,6 +173,9 @@
 
 <script setup>
 // OperationForm.vue – formulář pro jednu operaci v editaci výkresu
+import { computed } from 'vue'
+import { useToolsStore } from '../stores/tools.js'
+const toolsStore = useToolsStore()
 
 const props = defineProps({
   /** Objekt operace s hodnotami polí */
@@ -210,8 +213,8 @@ const operationTypes = [
   'Dokončování',
 ]
 
-// Seznam nástrojů N1–N30
-const tools = Array.from({ length: 30 }, (_, i) => `N${i + 1}`)
+// Seznam nástrojů z live dat (reaguje na přidání/odebrání nástrojů)
+const tools = computed(() => toolsStore.tools.map(t => t.id))
 
 // Hodnoty potenciometru
 const potentiometerValues = [0, 2, 4, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120]

@@ -14,7 +14,6 @@ import {
 import { db } from '../firebase.js'
 
 const COL = 'tools'
-const ALL_POSITIONS = Array.from({ length: 30 }, (_, i) => `N${i + 1}`)
 
 function emptyTool(pos) {
   return {
@@ -59,29 +58,39 @@ function compressImage(dataUrl, maxSize = 800, quality = 0.7) {
   })
 }
 
+function nNumber(id) {
+  return parseInt(id.slice(1)) || 0
+}
+
 export const useToolsStore = defineStore('tools', () => {
-  const tools = ref(ALL_POSITIONS.map(emptyTool))
+  const tools = ref([])
   const loading = ref(true)
   const error = ref(null)
+  let seeded = false
 
   onSnapshot(
     collection(db, COL),
-    (snapshot) => {
-      const fromFirestore = {}
+    async (snapshot) => {
+      // První spuštění s prázdnou kolekcí → vytvoříme 5 výchozích nástrojů
+      if (snapshot.empty && !seeded) {
+        seeded = true
+        for (let i = 1; i <= 5; i++) {
+          const pos = `N${i}`
+          await setDoc(doc(db, COL, pos), { ...emptyTool(pos) })
+        }
+        return // onSnapshot se znovu spustí s daty
+      }
+
+      const list = []
       snapshot.docs.forEach(d => {
         const data = d.data()
-        // Backward compat: staré dokumenty mají photo (string), nové photos (array)
-        let photos
-        if (Array.isArray(data.photos)) {
-          photos = data.photos
-        } else if (data.photo) {
-          photos = [data.photo]
-        } else {
-          photos = []
-        }
-        fromFirestore[d.id] = { id: d.id, ...data, photos }
+        const photos = Array.isArray(data.photos)
+          ? data.photos
+          : (data.photo ? [data.photo] : [])
+        list.push({ id: d.id, ...data, photos })
       })
-      tools.value = ALL_POSITIONS.map(pos => fromFirestore[pos] ?? emptyTool(pos))
+      // Seřadit podle čísla N
+      tools.value = list.sort((a, b) => nNumber(a.id) - nNumber(b.id))
       loading.value = false
     },
     (err) => {
@@ -93,6 +102,19 @@ export const useToolsStore = defineStore('tools', () => {
 
   function getToolByPosition(pos) {
     return tools.value.find(t => t.id === pos) ?? emptyTool(pos)
+  }
+
+  function addTool() {
+    const maxN = tools.value.reduce((m, t) => Math.max(m, nNumber(t.id)), 0)
+    const pos = `N${maxN + 1}`
+    // Optimistic update
+    tools.value.push(emptyTool(pos))
+    // Firestore zápis
+    setDoc(doc(db, COL, pos), { ...emptyTool(pos) }).catch(err => {
+      console.error('Tools addTool error:', err)
+      error.value = 'Nepodařilo se přidat nástroj.'
+    })
+    return pos
   }
 
   function saveTool(pos, data) {
@@ -125,5 +147,5 @@ export const useToolsStore = defineStore('tools', () => {
     })()
   }
 
-  return { tools, loading, error, getToolByPosition, saveTool }
+  return { tools, loading, error, getToolByPosition, addTool, saveTool }
 })

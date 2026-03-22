@@ -29,7 +29,12 @@
 
         <!-- ==================== NOŽE ==================== -->
         <section v-if="activeTab === 'noze'">
-          <h2 class="section-heading">Nástroje N1 – N30</h2>
+          <h2 class="section-heading">
+            Nástroje
+            <span v-if="!toolsStore.loading" style="font-weight:400;color:var(--text-muted);font-size:14px">
+              ({{ toolsStore.tools.length }})
+            </span>
+          </h2>
           <p class="section-note">Klikni na nástroj pro zobrazení nebo editaci</p>
 
           <div v-if="toolsStore.loading" class="loading-state">Načítám nástroje…</div>
@@ -66,6 +71,16 @@
               <div class="tool-row__arrow">›</div>
             </div>
           </div>
+
+          <!-- Přidat nůž -->
+          <button
+            v-if="!toolsStore.loading"
+            class="btn btn-secondary btn-block add-tool-btn"
+            type="button"
+            @click="toolsStore.addTool()"
+          >
+            + Přidat nůž
+          </button>
         </section>
 
         <!-- ==================== ZÁVITY ==================== -->
@@ -1187,7 +1202,11 @@ const materials = [
   font-size: 14px;
 }
 
-/* ---- TOOLS LIST (T1–T30) ---- */
+/* ---- TOOLS LIST ---- */
+.add-tool-btn {
+  margin-top: 12px;
+}
+
 .tools-list {
   display: flex;
   flex-direction: column;
