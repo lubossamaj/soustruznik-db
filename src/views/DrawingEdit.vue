@@ -401,10 +401,10 @@ function goBack() {
 
 <style scoped>
 .edit-page {
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 /* Sekce formuláře */

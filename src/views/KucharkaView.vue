@@ -1020,10 +1020,10 @@ const materials = [
 
 <style scoped>
 .kucharka-page {
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 /* ---- TABS (sticky pod app-headerem) ---- */
@@ -1034,9 +1034,7 @@ const materials = [
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  position: sticky;
-  top: 56px;   /* výška app-header */
-  z-index: 90;
+  flex-shrink: 0; /* zůstává viditelný – obsah scrolluje v .page-content */
 }
 .tabs-nav::-webkit-scrollbar { display: none; }
 
