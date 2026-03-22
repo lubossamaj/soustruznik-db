@@ -534,7 +534,7 @@
                     📷 Změnit
                     <input type="file" accept="image/*" capture="environment" class="sr-only" @change="handlePhoto" />
                   </label>
-                  <button type="button" class="btn btn-ghost" @click="editModal.form.photo = null">Odebrat</button>
+                  <button type="button" class="btn btn-ghost" @click="confirmRemoveToolPhoto = true">Odebrat</button>
                 </div>
               </div>
               <div v-else>
@@ -594,6 +594,26 @@
             <button class="btn btn-primary" @click="saveTool">💾 Uložit</button>
           </div>
 
+        </div>
+      </div>
+    </transition>
+
+    <!-- DIALOG: Odebrat fotku nástroje -->
+    <transition name="fade">
+      <div v-if="confirmRemoveToolPhoto" class="modal-overlay" @click.self="confirmRemoveToolPhoto = false">
+        <div class="modal">
+          <div class="modal__title">Odebrat fotku nástroje?</div>
+          <div class="modal__text">
+            Opravdu chcete odebrat fotku nástroje <strong>{{ editModal.tool.id }}</strong>?
+          </div>
+          <div class="modal__actions">
+            <button class="btn btn-ghost" type="button" @click="confirmRemoveToolPhoto = false">
+              Zrušit
+            </button>
+            <button class="btn btn-danger" type="button" @click="doRemoveToolPhoto">
+              Odebrat
+            </button>
+          </div>
         </div>
       </div>
     </transition>
@@ -659,6 +679,13 @@ function handlePhoto(event) {
 function saveTool() {
   toolsStore.saveTool(editModal.tool.id, { ...editModal.form })
   editModal.open = false
+}
+
+const confirmRemoveToolPhoto = ref(false)
+
+function doRemoveToolPhoto() {
+  editModal.form.photo = null
+  confirmRemoveToolPhoto.value = false
 }
 
 // ---- KALKULAČKA ----

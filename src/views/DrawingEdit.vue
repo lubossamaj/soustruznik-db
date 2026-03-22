@@ -148,6 +148,47 @@
         </div>
       </div>
     </transition>
+
+    <!-- DIALOG: Odebrat fotku -->
+    <transition name="fade">
+      <div v-if="confirmPhotoIdx !== null" class="modal-overlay" @click.self="confirmPhotoIdx = null">
+        <div class="modal">
+          <div class="modal__title">Odebrat fotku?</div>
+          <div class="modal__text">
+            Opravdu chcete odebrat tuto fotku výkresu?
+          </div>
+          <div class="modal__actions">
+            <button class="btn btn-ghost" type="button" @click="confirmPhotoIdx = null">
+              Zrušit
+            </button>
+            <button class="btn btn-danger" type="button" @click="doRemovePhoto">
+              Odebrat
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- DIALOG: Odebrat operaci -->
+    <transition name="fade">
+      <div v-if="confirmOpIdx !== null" class="modal-overlay" @click.self="confirmOpIdx = null">
+        <div class="modal">
+          <div class="modal__title">Smazat operaci?</div>
+          <div class="modal__text">
+            Opravdu chcete smazat
+            <strong>operaci {{ confirmOpIdx !== null ? form.operations[confirmOpIdx]?.operationNumber : '' }}</strong>?
+          </div>
+          <div class="modal__actions">
+            <button class="btn btn-ghost" type="button" @click="confirmOpIdx = null">
+              Zrušit
+            </button>
+            <button class="btn btn-danger" type="button" @click="doRemoveOperation">
+              Smazat
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -171,6 +212,12 @@ const store = useDrawingsStore()
 
 // Stav dialogu pro zrušení se změnami
 const showCancelDialog = ref(false)
+
+// Potvrzení smazání fotky (index nebo null)
+const confirmPhotoIdx = ref(null)
+
+// Potvrzení smazání operace (index nebo null)
+const confirmOpIdx = ref(null)
 
 // Chybové zprávy validace
 const errors = reactive({
@@ -248,8 +295,13 @@ function handlePhotoChange(event) {
 }
 
 function removePhoto(index) {
-  form.photos.splice(index, 1)
+  confirmPhotoIdx.value = index
+}
+
+function doRemovePhoto() {
+  form.photos.splice(confirmPhotoIdx.value, 1)
   isDirty.value = true
+  confirmPhotoIdx.value = null
 }
 
 // ─── Akce s operacemi ────────────────────────────────────────────────────────
@@ -265,10 +317,14 @@ function updateOperation(index, updatedOp) {
 }
 
 function removeOperation(index) {
-  form.operations.splice(index, 1)
-  // Přečíslujeme operace
+  confirmOpIdx.value = index
+}
+
+function doRemoveOperation() {
+  form.operations.splice(confirmOpIdx.value, 1)
   form.operations.forEach((op, i) => { op.operationNumber = i + 1 })
   isDirty.value = true
+  confirmOpIdx.value = null
 }
 
 /** Přesune operaci na indexu +direction (-1 = nahoru, +1 = dolů) */
