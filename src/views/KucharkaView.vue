@@ -164,43 +164,69 @@
           </div>
         </section>
 
-        <!-- ==================== DRSNOST ==================== -->
-        <section v-if="activeTab === 'drsnost'">
-          <h2 class="section-heading">Drsnost povrchu Ra</h2>
-          <p class="section-note">Střední aritmetická úchylka profilu • dle ČSN EN ISO 4287</p>
+        <!-- ==================== HMOTNOST ==================== -->
+        <section v-if="activeTab === 'hmotnost'">
+          <h2 class="section-heading">Kalkulačka hmotnosti</h2>
+          <p class="section-note">Výpočet hmotnosti polotovaru dle tvaru a materiálu</p>
 
-          <div class="table-scroll">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Třída</th>
-                  <th>Ra [µm]</th>
-                  <th>Rz [µm]</th>
-                  <th>Metoda obrábění</th>
-                  <th>Použití</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="r in roughness" :key="r.cls">
-                  <td class="td-name">{{ r.cls }}</td>
-                  <td>
-                    <span class="ra-chip" :style="{ background: r.color + '22', color: r.color, borderColor: r.color + '55' }">
-                      {{ r.ra }}
-                    </span>
-                  </td>
-                  <td>{{ r.rz }}</td>
-                  <td>{{ r.method }}</td>
-                  <td class="td-usage">{{ r.usage }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          <div class="calc-card">
+            <div class="calc-card__title">⚖️ Výpočet hmotnosti</div>
 
-          <h3 class="subsection-heading">Značení drsnosti na výkrese</h3>
-          <div class="symbol-cards">
-            <div class="symbol-card" v-for="s in raSymbols" :key="s.symbol">
-              <div class="symbol-card__sym">{{ s.symbol }}</div>
-              <div class="symbol-card__desc">{{ s.desc }}</div>
+            <div class="form-group" style="margin-bottom:12px">
+              <label class="form-label">Tvar polotovaru</label>
+              <div class="shape-toggle">
+                <button class="shape-btn" :class="{ 'shape-btn--active': weight.shape === 'round' }" @click="weight.shape = 'round'" type="button">⬤ Kruhová tyč</button>
+                <button class="shape-btn" :class="{ 'shape-btn--active': weight.shape === 'rect' }" @click="weight.shape = 'rect'" type="button">▬ Kvádr</button>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:12px">
+              <label class="form-label">Materiál</label>
+              <div class="shape-toggle">
+                <button v-for="m in weightMaterials" :key="m.id" class="shape-btn" :class="{ 'shape-btn--active': weight.material === m.id }" @click="weight.material = m.id" type="button">{{ m.label }}</button>
+              </div>
+              <div class="calc-note" style="margin-top:4px">Hustota: {{ weightMaterials.find(m=>m.id===weight.material)?.rho }} kg/m³</div>
+            </div>
+
+            <div v-if="weight.shape === 'round'" class="calc-grid">
+              <div class="form-group">
+                <label class="form-label">Průměr d [mm]</label>
+                <input v-model.number="weight.d" type="number" inputmode="decimal" class="form-control" placeholder="např. 50" min="0.1" step="0.1" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Délka L [mm]</label>
+                <input v-model.number="weight.L" type="number" inputmode="decimal" class="form-control" placeholder="např. 1000" min="0.1" step="1" />
+              </div>
+            </div>
+
+            <div v-if="weight.shape === 'rect'">
+              <div class="calc-grid">
+                <div class="form-group">
+                  <label class="form-label">Šířka a [mm]</label>
+                  <input v-model.number="weight.a" type="number" inputmode="decimal" class="form-control" placeholder="např. 50" min="0.1" step="0.1" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Výška b [mm]</label>
+                  <input v-model.number="weight.b" type="number" inputmode="decimal" class="form-control" placeholder="např. 50" min="0.1" step="0.1" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Délka L [mm]</label>
+                <input v-model.number="weight.L" type="number" inputmode="decimal" class="form-control" placeholder="např. 1000" min="0.1" step="1" />
+              </div>
+            </div>
+
+            <div v-if="calcWeight !== null" class="calc-result" style="flex-direction:column;align-items:flex-start;gap:4px">
+              <div style="display:flex;align-items:center;gap:10px;width:100%">
+                <span class="calc-result__label">Hmotnost =</span>
+                <span class="calc-result__value">{{ calcWeight.kg }} kg</span>
+              </div>
+              <div style="font-size:12px;color:var(--text-muted)">
+                Objem: {{ calcWeight.cm3 }} cm³ &nbsp;|&nbsp; {{ calcWeight.g }} g
+              </div>
+            </div>
+            <div v-else class="calc-result calc-result--empty">
+              Zadej rozměry pro výpočet
             </div>
           </div>
         </section>
@@ -319,6 +345,43 @@
               <div class="fit-card__desc">{{ f.desc }}</div>
             </div>
           </div>
+
+          <!-- DRSNOST POVRCHU Ra (přesunuto z vlastního tabu) -->
+          <h3 class="subsection-heading">Drsnost povrchu Ra – ISO 4287</h3>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Třída</th>
+                  <th>Ra [µm]</th>
+                  <th>Rz [µm]</th>
+                  <th>Metoda obrábění</th>
+                  <th>Použití</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="r in roughness" :key="r.cls">
+                  <td class="td-name">{{ r.cls }}</td>
+                  <td>
+                    <span class="ra-chip" :style="{ background: r.color + '22', color: r.color, borderColor: r.color + '55' }">
+                      {{ r.ra }}
+                    </span>
+                  </td>
+                  <td>{{ r.rz }}</td>
+                  <td>{{ r.method }}</td>
+                  <td class="td-usage">{{ r.usage }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3 class="subsection-heading">Značení drsnosti na výkrese</h3>
+          <div class="symbol-cards">
+            <div class="symbol-card" v-for="s in raSymbols" :key="s.symbol">
+              <div class="symbol-card__sym">{{ s.symbol }}</div>
+              <div class="symbol-card__desc">{{ s.desc }}</div>
+            </div>
+          </div>
         </section>
 
         <!-- ==================== ŘEZNÉ PODMÍNKY ==================== -->
@@ -364,91 +427,6 @@
             <div class="calc-result" v-if="calcFeed !== null">
               <span class="calc-result__label">Posuv f =</span>
               <span class="calc-result__value">{{ calcFeed }} mm/ot</span>
-            </div>
-          </div>
-
-          <!-- KALKULAČKA VÁHY -->
-          <h3 class="subsection-heading">Kalkulačka váhy materiálu</h3>
-          <div class="calc-card">
-            <div class="calc-card__title">⚖️ Výpočet hmotnosti</div>
-
-            <!-- Tvar -->
-            <div class="form-group" style="margin-bottom:12px">
-              <label class="form-label">Tvar polotovaru</label>
-              <div class="shape-toggle">
-                <button
-                  class="shape-btn"
-                  :class="{ 'shape-btn--active': weight.shape === 'round' }"
-                  @click="weight.shape = 'round'"
-                  type="button"
-                >⬤ Kruhová tyč</button>
-                <button
-                  class="shape-btn"
-                  :class="{ 'shape-btn--active': weight.shape === 'rect' }"
-                  @click="weight.shape = 'rect'"
-                  type="button"
-                >▬ Kvádr</button>
-              </div>
-            </div>
-
-            <!-- Materiál -->
-            <div class="form-group" style="margin-bottom:12px">
-              <label class="form-label">Materiál</label>
-              <div class="shape-toggle">
-                <button
-                  v-for="m in weightMaterials"
-                  :key="m.id"
-                  class="shape-btn"
-                  :class="{ 'shape-btn--active': weight.material === m.id }"
-                  @click="weight.material = m.id"
-                  type="button"
-                >{{ m.label }}</button>
-              </div>
-              <div class="calc-note" style="margin-top:4px">Hustota: {{ weightMaterials.find(m=>m.id===weight.material)?.rho }} kg/m³</div>
-            </div>
-
-            <!-- Rozměry – kruhová tyč -->
-            <div v-if="weight.shape === 'round'" class="calc-grid">
-              <div class="form-group">
-                <label class="form-label">Průměr d [mm]</label>
-                <input v-model.number="weight.d" type="number" inputmode="decimal" class="form-control" placeholder="např. 50" min="0.1" step="0.1" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Délka L [mm]</label>
-                <input v-model.number="weight.L" type="number" inputmode="decimal" class="form-control" placeholder="např. 1000" min="0.1" step="1" />
-              </div>
-            </div>
-
-            <!-- Rozměry – kvádr -->
-            <div v-if="weight.shape === 'rect'">
-              <div class="calc-grid">
-                <div class="form-group">
-                  <label class="form-label">Šířka a [mm]</label>
-                  <input v-model.number="weight.a" type="number" inputmode="decimal" class="form-control" placeholder="např. 50" min="0.1" step="0.1" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Výška b [mm]</label>
-                  <input v-model.number="weight.b" type="number" inputmode="decimal" class="form-control" placeholder="např. 50" min="0.1" step="0.1" />
-                </div>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Délka L [mm]</label>
-                <input v-model.number="weight.L" type="number" inputmode="decimal" class="form-control" placeholder="např. 1000" min="0.1" step="1" />
-              </div>
-            </div>
-
-            <!-- Výsledek -->
-            <div v-if="calcWeight !== null" class="calc-result" style="flex-direction:column;align-items:flex-start;gap:4px">
-              <div style="display:flex;align-items:center;gap:10px;width:100%">
-                <span class="calc-result__label">Hmotnost =</span>
-                <span class="calc-result__value">{{ calcWeight.kg }} kg</span>
-              </div>
-              <div style="font-size:12px;color:var(--text-muted)">
-                Objem: {{ calcWeight.cm3 }} cm³ &nbsp;|&nbsp; {{ calcWeight.g }} g
-              </div>
-            </div>
-            <div v-else class="calc-result calc-result--empty">
-              Zadej rozměry pro výpočet
             </div>
           </div>
 
@@ -587,7 +565,7 @@ const tabs = [
   { id: 'noze',      icon: '🔧', label: 'Nože'      },
   { id: 'podminky',  icon: '⚡',  label: 'Podmínky'  },
   { id: 'zavity',    icon: '🔩', label: 'Závity'    },
-  { id: 'drsnost',   icon: '〰', label: 'Ra'        },
+  { id: 'hmotnost',  icon: '⚖️', label: 'Hmotnost'  },
   { id: 'vykres',    icon: '📐', label: 'Výkres'    },
 ]
 const activeTab = ref('noze')
