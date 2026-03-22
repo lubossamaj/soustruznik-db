@@ -9,7 +9,7 @@
       </div>
     </header>
 
-    <!-- TABS -->
+    <!-- TABS (sticky pod headerem) -->
     <nav class="tabs-nav">
       <button
         v-for="tab in tabs"
@@ -29,21 +29,38 @@
 
         <!-- ==================== NOŽE ==================== -->
         <section v-if="activeTab === 'noze'">
-          <h2 class="section-heading">Soustružnické nože</h2>
+          <h2 class="section-heading">Nástroje T1 – T30</h2>
+          <p class="section-note">Klikni na nástroj pro zobrazení nebo editaci</p>
 
-          <div class="tool-grid">
-            <div v-for="tool in tools" :key="tool.name" class="tool-card">
-              <div class="tool-card__header">
-                <span class="tool-card__icon">{{ tool.icon }}</span>
-                <span class="tool-card__name">{{ tool.name }}</span>
+          <div v-if="toolsStore.loading" class="loading-state">Načítám nástroje…</div>
+
+          <div v-else class="tools-list">
+            <div
+              v-for="tool in toolsStore.tools"
+              :key="tool.id"
+              class="tool-row"
+              @click="openEdit(tool)"
+            >
+              <!-- Fotka / placeholder -->
+              <div class="tool-row__photo">
+                <img v-if="tool.photo" :src="tool.photo" alt="" class="tool-row__img" />
+                <span v-else class="tool-row__noimg">🔧</span>
               </div>
-              <p class="tool-card__desc">{{ tool.desc }}</p>
-              <div class="tool-card__params">
-                <div v-for="p in tool.params" :key="p.k" class="param-row">
-                  <span class="param-row__key">{{ p.k }}</span>
-                  <span class="param-row__val">{{ p.v }}</span>
+
+              <!-- Info -->
+              <div class="tool-row__info">
+                <div class="tool-row__pos">{{ tool.id }}</div>
+                <div class="tool-row__name" :class="{ 'tool-row__name--empty': !tool.name }">
+                  {{ tool.name || 'Nenastaveno' }}
+                </div>
+                <div v-if="tool.material" class="tool-row__material">{{ tool.material }}</div>
+                <div v-if="tool.rpmMin || tool.rpmMax" class="tool-row__rpm">
+                  {{ tool.rpmMin }}–{{ tool.rpmMax }} ot/min
                 </div>
               </div>
+
+              <!-- Šipka -->
+              <div class="tool-row__arrow">›</div>
             </div>
           </div>
         </section>
@@ -118,7 +135,6 @@
             </table>
           </div>
 
-          <!-- Značení na výkrese -->
           <h3 class="subsection-heading">Značení drsnosti na výkrese</h3>
           <div class="symbol-cards">
             <div class="symbol-card" v-for="s in raSymbols" :key="s.symbol">
@@ -132,13 +148,12 @@
         <section v-if="activeTab === 'vykres'">
           <h2 class="section-heading">Výkresové vysvětlivky</h2>
 
-          <!-- Geometrické tolerance -->
           <h3 class="subsection-heading">Geometrické tolerance (GD&T)</h3>
           <div class="table-scroll">
             <table class="data-table">
               <thead>
                 <tr>
-                  <th>Značka</th>
+                  <th>Zn.</th>
                   <th>Název</th>
                   <th>Skupina</th>
                   <th>Popis</th>
@@ -155,7 +170,6 @@
             </table>
           </div>
 
-          <!-- Zkratky na výkresech -->
           <h3 class="subsection-heading">Časté zkratky a značky</h3>
           <div class="abbr-grid">
             <div v-for="a in abbreviations" :key="a.sym" class="abbr-card">
@@ -164,14 +178,13 @@
             </div>
           </div>
 
-          <!-- Tolerance ISO 2768 -->
           <h3 class="subsection-heading">Všeobecné tolerance ISO 2768</h3>
           <div class="table-scroll">
             <table class="data-table">
               <thead>
                 <tr>
                   <th>Třída</th>
-                  <th>Označení</th>
+                  <th>Kód</th>
                   <th>Délkové úchylky</th>
                   <th>Úhlové úchylky</th>
                   <th>Použití</th>
@@ -189,8 +202,7 @@
             </table>
           </div>
 
-          <!-- Uložení a tolerance (soustavy) -->
-          <h3 class="subsection-heading">Soustava uložení – příklady</h3>
+          <h3 class="subsection-heading">Příklady uložení – soustava díry H</h3>
           <div class="fits-grid">
             <div v-for="f in fits" :key="f.fit" class="fit-card">
               <div class="fit-card__fit">{{ f.fit }}</div>
@@ -200,102 +212,287 @@
           </div>
         </section>
 
+        <!-- ==================== ŘEZNÉ PODMÍNKY ==================== -->
+        <section v-if="activeTab === 'podminky'">
+          <h2 class="section-heading">Řezné podmínky</h2>
+
+          <!-- KALKULAČKA OTÁČEK -->
+          <div class="calc-card">
+            <div class="calc-card__title">🧮 Kalkulačka otáček</div>
+            <div class="calc-note">n = (vc × 1000) / (π × d)</div>
+            <div class="calc-grid">
+              <div class="form-group">
+                <label class="form-label">Průměr obrobku d [mm]</label>
+                <input v-model.number="calc.d" type="number" inputmode="decimal" class="form-control" placeholder="např. 50" min="0.1" step="0.1" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Řezná rychlost vc [m/min]</label>
+                <input v-model.number="calc.vc" type="number" inputmode="decimal" class="form-control" placeholder="např. 150" min="1" step="1" />
+              </div>
+            </div>
+            <div class="calc-result" v-if="calcRpm !== null">
+              <span class="calc-result__label">Otáčky n =</span>
+              <span class="calc-result__value">{{ calcRpm }} ot/min</span>
+            </div>
+            <div class="calc-result calc-result--empty" v-else>
+              Zadej průměr a řeznou rychlost
+            </div>
+
+            <!-- Kalkulačka posuvu mm/min -->
+            <div class="calc-divider"></div>
+            <div class="calc-card__title" style="margin-bottom:12px">Posuv mm/min → mm/ot</div>
+            <div class="calc-note">f[mm/ot] = vf / n</div>
+            <div class="calc-grid">
+              <div class="form-group">
+                <label class="form-label">Posuv vf [mm/min]</label>
+                <input v-model.number="calc.vf" type="number" inputmode="decimal" class="form-control" placeholder="např. 80" min="1" step="1" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Otáčky n [ot/min]</label>
+                <input v-model.number="calc.n" type="number" inputmode="decimal" class="form-control" placeholder="z kalkulačky výše" min="1" step="1" />
+              </div>
+            </div>
+            <div class="calc-result" v-if="calcFeed !== null">
+              <span class="calc-result__label">Posuv f =</span>
+              <span class="calc-result__value">{{ calcFeed }} mm/ot</span>
+            </div>
+          </div>
+
+          <!-- TABULKA DLE MATERIÁLU -->
+          <h3 class="subsection-heading">Doporučené řezné podmínky dle materiálu</h3>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Materiál</th>
+                  <th>ISO sk.</th>
+                  <th>vc [m/min]<br /><small>hrubování</small></th>
+                  <th>vc [m/min]<br /><small>načisto</small></th>
+                  <th>f [mm/ot]<br /><small>hrubování</small></th>
+                  <th>f [mm/ot]<br /><small>načisto</small></th>
+                  <th>Chlazení</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="m in materials" :key="m.name">
+                  <td class="td-name">{{ m.name }}</td>
+                  <td><span class="iso-badge" :class="'iso-' + m.iso.toLowerCase()">{{ m.iso }}</span></td>
+                  <td>{{ m.vcRough }}</td>
+                  <td class="td-drill">{{ m.vcFinish }}</td>
+                  <td>{{ m.fRough }}</td>
+                  <td>{{ m.fFinish }}</td>
+                  <td class="td-usage">{{ m.cooling }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- MORSE KÓNUSY -->
+          <h3 class="subsection-heading">Morse kónusy – rozměry</h3>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Morse č.</th>
+                  <th>Velký Ø D [mm]</th>
+                  <th>Malý Ø d [mm]</th>
+                  <th>Délka L [mm]</th>
+                  <th>Kužel</th>
+                  <th>Použití</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="m in morseTapers" :key="m.no">
+                  <td class="td-name">MK {{ m.no }}</td>
+                  <td>{{ m.D }}</td>
+                  <td>{{ m.d }}</td>
+                  <td>{{ m.L }}</td>
+                  <td>1 : {{ m.taper }}</td>
+                  <td class="td-usage">{{ m.usage }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- MAZIVA A CHLAZENÍ -->
+          <h3 class="subsection-heading">Řezná média a chlazení</h3>
+          <div class="cooling-grid">
+            <div v-for="c in coolingFluids" :key="c.name" class="cooling-card">
+              <div class="cooling-card__icon">{{ c.icon }}</div>
+              <div class="cooling-card__name">{{ c.name }}</div>
+              <div class="cooling-card__desc">{{ c.desc }}</div>
+              <div class="cooling-card__for">{{ c.for }}</div>
+            </div>
+          </div>
+        </section>
+
       </div>
     </main>
+
+    <!-- ==================== EDIT MODAL (Nože) ==================== -->
+    <transition name="slide-up">
+      <div v-if="editModal.open" class="edit-modal-overlay" @click.self="closeEdit">
+        <div class="edit-modal">
+
+          <div class="edit-modal__header">
+            <span class="edit-modal__title">{{ editModal.tool.id }} – Editace nástroje</span>
+            <button class="edit-modal__close" @click="closeEdit">✕</button>
+          </div>
+
+          <div class="edit-modal__body">
+
+            <!-- Fotka -->
+            <div class="form-group">
+              <label class="form-label">Fotka nástroje</label>
+              <div v-if="editModal.form.photo" class="photo-current">
+                <img :src="editModal.form.photo" alt="Nástroj" class="photo-preview" />
+                <div style="display:flex;gap:8px;margin-top:8px">
+                  <label class="btn btn-secondary" style="cursor:pointer;flex:1">
+                    📷 Změnit
+                    <input type="file" accept="image/*" capture="environment" class="sr-only" @change="handlePhoto" />
+                  </label>
+                  <button type="button" class="btn btn-ghost" @click="editModal.form.photo = null">Odebrat</button>
+                </div>
+              </div>
+              <div v-else>
+                <label class="btn btn-secondary btn-block" style="cursor:pointer">
+                  📷 Přidat fotku nástroje
+                  <input type="file" accept="image/*" capture="environment" class="sr-only" @change="handlePhoto" />
+                </label>
+              </div>
+            </div>
+
+            <!-- Název -->
+            <div class="form-group">
+              <label class="form-label">Název / typ nástroje</label>
+              <input v-model="editModal.form.name" type="text" class="form-control"
+                placeholder="např. Ubírací nůž hrubování" autocomplete="off" spellcheck="false" />
+            </div>
+
+            <!-- Popis -->
+            <div class="form-group">
+              <label class="form-label">Popis – co nástroj dělá</label>
+              <textarea v-model="editModal.form.description" class="form-control"
+                rows="3" placeholder="Popis operace, upozornění, technologie…"></textarea>
+            </div>
+
+            <!-- Otáčky -->
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Otáčky min [ot/min]</label>
+                <input v-model="editModal.form.rpmMin" type="number" inputmode="numeric" class="form-control"
+                  placeholder="např. 200" min="0" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Otáčky max [ot/min]</label>
+                <input v-model="editModal.form.rpmMax" type="number" inputmode="numeric" class="form-control"
+                  placeholder="např. 800" min="0" />
+              </div>
+            </div>
+
+            <!-- Materiál -->
+            <div class="form-group">
+              <label class="form-label">Vhodné materiály</label>
+              <input v-model="editModal.form.material" type="text" class="form-control"
+                placeholder="např. Ocel, Litina, Hliník" autocomplete="off" spellcheck="false" />
+            </div>
+
+            <!-- Poznámka -->
+            <div class="form-group">
+              <label class="form-label">Poznámka / doporučení</label>
+              <textarea v-model="editModal.form.note" class="form-control"
+                rows="2" placeholder="Doporučení, chlazení, opotřebení…"></textarea>
+            </div>
+
+          </div>
+
+          <div class="edit-modal__footer">
+            <button class="btn btn-ghost" @click="closeEdit">Zrušit</button>
+            <button class="btn btn-primary" @click="saveTool">💾 Uložit</button>
+          </div>
+
+        </div>
+      </div>
+    </transition>
+
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useToolsStore } from '../stores/tools.js'
 
 const router = useRouter()
+const toolsStore = useToolsStore()
 
 const tabs = [
-  { id: 'noze',    icon: '🔧', label: 'Nože'    },
-  { id: 'zavity',  icon: '🔩', label: 'Závity'  },
-  { id: 'drsnost', icon: '〰', label: 'Ra'      },
-  { id: 'vykres',  icon: '📐', label: 'Výkres'  },
+  { id: 'noze',      icon: '🔧', label: 'Nože'      },
+  { id: 'podminky',  icon: '⚡',  label: 'Podmínky'  },
+  { id: 'zavity',    icon: '🔩', label: 'Závity'    },
+  { id: 'drsnost',   icon: '〰', label: 'Ra'        },
+  { id: 'vykres',    icon: '📐', label: 'Výkres'    },
 ]
 const activeTab = ref('noze')
 
-/* ---- NOŽE ---- */
-const tools = [
-  {
-    icon: '↗', name: 'Ubírací nůž – hrubování',
-    desc: 'Odebírá velké množství materiálu. Robustní průřez, velký úhel čela.',
-    params: [
-      { k: 'Posuv f',     v: '0,2 – 0,8 mm/ot' },
-      { k: 'Hloubka ap',  v: '2 – 8 mm' },
-      { k: 'Geometrie',   v: 'κr = 45–90°, γ = 6–10°' },
-    ],
+// ---- EDIT MODAL ----
+const editModal = reactive({
+  open: false,
+  tool: {},
+  form: {
+    name: '', photo: null, description: '',
+    rpmMin: '', rpmMax: '', material: '', note: '',
   },
-  {
-    icon: '→', name: 'Ubírací nůž – načisto',
-    desc: 'Dokončovací soustružení na míru. Menší posuv, hladší povrch.',
-    params: [
-      { k: 'Posuv f',     v: '0,05 – 0,2 mm/ot' },
-      { k: 'Hloubka ap',  v: '0,1 – 1 mm' },
-      { k: 'Geometrie',   v: 'κr = 45–75°, γ = 10–15°' },
-    ],
-  },
-  {
-    icon: '↙', name: 'Rohový nůž (čelní)',
-    desc: 'Zarovnává čela, soustružení osazení a kolmých ploch.',
-    params: [
-      { k: 'Posuv f',     v: '0,1 – 0,4 mm/ot' },
-      { k: 'Hloubka ap',  v: '0,5 – 4 mm' },
-      { k: 'Geometrie',   v: 'κr = 90°, rohový nůž' },
-    ],
-  },
-  {
-    icon: '⊥', name: 'Upichovací / zapichovací nůž',
-    desc: 'Upichování obrobku, zapichování drážek a osazení.',
-    params: [
-      { k: 'Posuv f',     v: '0,03 – 0,12 mm/ot' },
-      { k: 'Šířka nože',  v: '2 – 6 mm' },
-      { k: 'Chlazení',    v: 'nutné, hrozí vibrace' },
-    ],
-  },
-  {
-    icon: '≈', name: 'Závitový nůž',
-    desc: 'Řezání vnějších i vnitřních závitů na soustruhu. Profil 60° (metrický).',
-    params: [
-      { k: 'Počet záběrů', v: '5–15 (dle materiálu)' },
-      { k: 'Záběr',        v: '0,05 – 0,3 mm/záběr' },
-      { k: 'Profil',       v: '60° ISO metrický' },
-    ],
-  },
-  {
-    icon: '⟲', name: 'Vnitřní nůž (vývrtek)',
-    desc: 'Soustružení vnitřních průměrů a otvorů. Vysoké riziko vibrací.',
-    params: [
-      { k: 'Posuv f',     v: '0,05 – 0,2 mm/ot' },
-      { k: 'Hloubka ap',  v: '0,3 – 2 mm' },
-      { k: 'Dosah',       v: 'max 4× průměr tyče' },
-    ],
-  },
-  {
-    icon: '⌒', name: 'Kopírovací (profilový) nůž',
-    desc: 'Tvarové soustružení, rádiusy, kužely. Malý poloměr špičky.',
-    params: [
-      { k: 'Posuv f',     v: '0,05 – 0,15 mm/ot' },
-      { k: 'Rε špičky',   v: '0,2 – 0,8 mm' },
-      { k: 'Geometrie',   v: 'malý úhel nastavení' },
-    ],
-  },
-  {
-    icon: '▷', name: 'Vydutý / vypuklý tvarový nůž',
-    desc: 'Výroba standardních tvarů (radiusy, drážky) v jediném záběru.',
-    params: [
-      { k: 'Posuv f',     v: '0,02 – 0,08 mm/ot' },
-      { k: 'Šířka řezu',  v: 'dle tvaru' },
-      { k: 'Chlazení',    v: 'doporučeno' },
-    ],
-  },
-]
+})
 
-/* ---- ZÁVITY ---- */
+function openEdit(tool) {
+  editModal.tool = tool
+  editModal.form = {
+    name:        tool.name        || '',
+    photo:       tool.photo       || null,
+    description: tool.description || '',
+    rpmMin:      tool.rpmMin      || '',
+    rpmMax:      tool.rpmMax      || '',
+    material:    tool.material    || '',
+    note:        tool.note        || '',
+  }
+  editModal.open = true
+}
+
+function closeEdit() {
+  editModal.open = false
+}
+
+function handlePhoto(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = (e) => { editModal.form.photo = e.target.result }
+  reader.readAsDataURL(file)
+  event.target.value = ''
+}
+
+function saveTool() {
+  toolsStore.saveTool(editModal.tool.id, { ...editModal.form })
+  editModal.open = false
+}
+
+// ---- KALKULAČKA ----
+const calc = reactive({ d: null, vc: null, vf: null, n: null })
+
+const calcRpm = computed(() => {
+  if (!calc.d || !calc.vc || calc.d <= 0 || calc.vc <= 0) return null
+  return Math.round((calc.vc * 1000) / (Math.PI * calc.d))
+})
+
+const calcFeed = computed(() => {
+  const n = calc.n || calcRpm.value
+  if (!calc.vf || !n || n <= 0) return null
+  return (calc.vf / n).toFixed(3)
+})
+
+// ---- DATA ----
+
 const threads = [
   { d:'M1',   p:'0,25', d2:'0,838', d1:'0,693', dr:'0,75' },
   { d:'M1,2', p:'0,25', d2:'1,038', d1:'0,893', dr:'0,95' },
@@ -330,18 +527,17 @@ const threads = [
   { d:'M64',  p:'6,0',  d2:'60,103',d1:'57,505',dr:'58,0', hi:true },
 ]
 
-/* ---- DRSNOST ---- */
 const roughness = [
-  { cls:'N1',  ra:'0,1',  rz:'0,5',  color:'#7c3aed', method:'Superfinishing, leštění', usage:'Ložisková sedla, optika' },
-  { cls:'N2',  ra:'0,2',  rz:'1,0',  color:'#7c3aed', method:'Jemné leštění, honování', usage:'Přesná ložiska, píst' },
-  { cls:'N3',  ra:'0,4',  rz:'2,0',  color:'#2563eb', method:'Honování, jemné broušení', usage:'Válce, vnitřní průměry' },
-  { cls:'N4',  ra:'0,8',  rz:'4,0',  color:'#2563eb', method:'Jemné broušení, diamant. soustr.', usage:'Těsnicí plochy, vodítka' },
-  { cls:'N5',  ra:'1,6',  rz:'8,0',  color:'#059669', method:'Broušení, jemné soustružení', usage:'Funkční plochy, spojení' },
-  { cls:'N6',  ra:'3,2',  rz:'16',   color:'#059669', method:'Jemné soustružení, frézování', usage:'Obvyklé obrábění načisto' },
-  { cls:'N7',  ra:'6,3',  rz:'32',   color:'#d97706', method:'Soustružení, frézování', usage:'Méně důležité plochy' },
-  { cls:'N8',  ra:'12,5', rz:'63',   color:'#d97706', method:'Hrubé soustružení', usage:'Hrubování, povrch odlitků' },
-  { cls:'N9',  ra:'25',   rz:'125',  color:'#dc2626', method:'Hrubé obrábění, tvarování', usage:'Skryté plochy, hrubovky' },
-  { cls:'N10', ra:'50',   rz:'250',  color:'#dc2626', method:'Opracování za tepla, lití', usage:'Neobrobené plochy' },
+  { cls:'N1',  ra:'0,1',  rz:'0,5',  color:'#7c3aed', method:'Superfinishing, leštění',          usage:'Ložisková sedla, optika'       },
+  { cls:'N2',  ra:'0,2',  rz:'1,0',  color:'#7c3aed', method:'Jemné leštění, honování',           usage:'Přesná ložiska, píst'          },
+  { cls:'N3',  ra:'0,4',  rz:'2,0',  color:'#2563eb', method:'Honování, jemné broušení',          usage:'Válce, vnitřní průměry'        },
+  { cls:'N4',  ra:'0,8',  rz:'4,0',  color:'#2563eb', method:'Jemné broušení, diamant. soustr.',  usage:'Těsnicí plochy, vodítka'       },
+  { cls:'N5',  ra:'1,6',  rz:'8,0',  color:'#059669', method:'Broušení, jemné soustružení',       usage:'Funkční plochy, spojení'       },
+  { cls:'N6',  ra:'3,2',  rz:'16',   color:'#059669', method:'Jemné soustružení, frézování',      usage:'Obvyklé obrábění načisto'      },
+  { cls:'N7',  ra:'6,3',  rz:'32',   color:'#d97706', method:'Soustružení, frézování',            usage:'Méně důležité plochy'          },
+  { cls:'N8',  ra:'12,5', rz:'63',   color:'#d97706', method:'Hrubé soustružení',                 usage:'Hrubování, povrch odlitků'     },
+  { cls:'N9',  ra:'25',   rz:'125',  color:'#dc2626', method:'Hrubé obrábění, tvarování',         usage:'Skryté plochy, hrubovky'       },
+  { cls:'N10', ra:'50',   rz:'250',  color:'#dc2626', method:'Opracování za tepla, lití',         usage:'Neobrobené plochy'             },
 ]
 
 const raSymbols = [
@@ -353,51 +549,47 @@ const raSymbols = [
   { symbol: 'Rmax', desc: 'Největší výška nerovností' },
 ]
 
-/* ---- GD&T ---- */
 const gdtSymbols = [
-  { sym:'—',  name:'Přímočarost',        group:'tvar',   groupName:'Tvar',    desc:'Odchylka od přímé linie' },
-  { sym:'□',  name:'Rovinnost',          group:'tvar',   groupName:'Tvar',    desc:'Odchylka od ideální roviny' },
-  { sym:'○',  name:'Kruhovitost',        group:'tvar',   groupName:'Tvar',    desc:'Odchylka od ideální kružnice' },
-  { sym:'⌭',  name:'Válcovitost',        group:'tvar',   groupName:'Tvar',    desc:'Kruhovitost + přímočarost osy' },
-  { sym:'⌒',  name:'Profil čáry',        group:'tvar',   groupName:'Tvar',    desc:'Tolerance libovolné křivky' },
-  { sym:'⊥',  name:'Kolmost',           group:'poloha', groupName:'Poloha',  desc:'90° k referenční rovině/ose' },
-  { sym:'∠',  name:'Úhlovost',          group:'poloha', groupName:'Poloha',  desc:'Tolerance úhlu k základně' },
-  { sym:'∥',  name:'Rovnoběžnost',      group:'poloha', groupName:'Poloha',  desc:'Paralelní s referenční plochou' },
-  { sym:'⊕',  name:'Poloha',           group:'poloha', groupName:'Poloha',  desc:'Tolerance polohy prvku' },
-  { sym:'◎',  name:'Souosost',          group:'poloha', groupName:'Poloha',  desc:'Odchylka os rotačních ploch' },
-  { sym:'=',  name:'Souměrnost',        group:'poloha', groupName:'Poloha',  desc:'Symetrie k referenční rovině' },
-  { sym:'↗',  name:'Házení (kruhové)',  group:'hazeni', groupName:'Házení',  desc:'Odchylka při otáčení – 1 řez' },
-  { sym:'⇗',  name:'Celkové házení',   group:'hazeni', groupName:'Házení',  desc:'Odchylka při otáčení – celá plocha' },
+  { sym:'—',  name:'Přímočarost',     group:'tvar',   groupName:'Tvar',   desc:'Odchylka od přímé linie' },
+  { sym:'□',  name:'Rovinnost',       group:'tvar',   groupName:'Tvar',   desc:'Odchylka od ideální roviny' },
+  { sym:'○',  name:'Kruhovitost',     group:'tvar',   groupName:'Tvar',   desc:'Odchylka od ideální kružnice' },
+  { sym:'⌭',  name:'Válcovitost',     group:'tvar',   groupName:'Tvar',   desc:'Kruhovitost + přímočarost osy' },
+  { sym:'⊥',  name:'Kolmost',        group:'poloha', groupName:'Poloha', desc:'90° k referenční rovině/ose' },
+  { sym:'∠',  name:'Úhlovost',       group:'poloha', groupName:'Poloha', desc:'Tolerance úhlu k základně' },
+  { sym:'∥',  name:'Rovnoběžnost',   group:'poloha', groupName:'Poloha', desc:'Paralelní s referenční plochou' },
+  { sym:'⊕',  name:'Poloha',        group:'poloha', groupName:'Poloha', desc:'Tolerance polohy prvku' },
+  { sym:'◎',  name:'Souosost',       group:'poloha', groupName:'Poloha', desc:'Odchylka os rotačních ploch' },
+  { sym:'=',  name:'Souměrnost',     group:'poloha', groupName:'Poloha', desc:'Symetrie k referenční rovině' },
+  { sym:'↗',  name:'Házení',         group:'hazeni', groupName:'Házení', desc:'Odchylka při otáčení – 1 řez' },
+  { sym:'⇗',  name:'Celkové házení', group:'hazeni', groupName:'Házení', desc:'Odchylka při otáčení – celá plocha' },
 ]
 
 const abbreviations = [
-  { sym:'⌀',    name:'Průměr' },
-  { sym:'R',    name:'Poloměr' },
-  { sym:'□',    name:'Čtvercový průřez' },
-  { sym:'SR',   name:'Kulový poloměr' },
-  { sym:'S⌀',   name:'Kulový průměr' },
-  { sym:'t',    name:'Hloubka' },
-  { sym:'p',    name:'Rozteč' },
-  { sym:'M',    name:'Metrický závit' },
-  { sym:'Tr',   name:'Trapézový závit' },
-  { sym:'G',    name:'Trubkový závit' },
-  { sym:'C',    name:'Zkosení (chanfer)' },
-  { sym:'TYP',  name:'Typický rozměr' },
-  { sym:'MAX',  name:'Maximální hodnota' },
-  { sym:'MIN',  name:'Minimální hodnota' },
-  { sym:'REF',  name:'Referenční kóta' },
-  { sym:'CNC',  name:'Obrábění na CNC' },
+  { sym:'⌀',   name:'Průměr'         },
+  { sym:'R',   name:'Poloměr'        },
+  { sym:'SR',  name:'Kulový poloměr' },
+  { sym:'S⌀',  name:'Kulový průměr'  },
+  { sym:'□',   name:'Čtvercový průřez'},
+  { sym:'t',   name:'Hloubka'        },
+  { sym:'p',   name:'Rozteč'         },
+  { sym:'M',   name:'Metr. závit'    },
+  { sym:'Tr',  name:'Trapézový závit'},
+  { sym:'G',   name:'Trubkový závit' },
+  { sym:'C',   name:'Zkosení'        },
+  { sym:'TYP', name:'Typický rozměr' },
+  { sym:'MAX', name:'Maximum'        },
+  { sym:'MIN', name:'Minimum'        },
+  { sym:'REF', name:'Referenční kóta'},
+  { sym:'∅',   name:'Průměr (alt.)'  },
 ]
 
-/* ---- ISO 2768 ---- */
 const iso2768 = [
-  { cls:'Jemná',      code:'f', length:'±0,05 – ±0,3 mm',  angle:'±0°5′ – ±1°',  usage:'Přesné strojní díly' },
-  { cls:'Střední',    code:'m', length:'±0,1 – ±0,5 mm',   angle:'±0°10′ – ±1°30′', usage:'Obvyklé obrábění – default' },
-  { cls:'Hrubá',      code:'c', length:'±0,2 – ±1,0 mm',   angle:'±0°15′ – ±3°', usage:'Odlévání, kování' },
-  { cls:'Velmi hrubá',code:'v', length:'±0,5 – ±2,0 mm',   angle:'±0°30′ – ±5°', usage:'Surové výrobky' },
+  { cls:'Jemná',       code:'f', length:'±0,05–±0,3 mm',  angle:'±0°5′–±1°',     usage:'Přesné strojní díly' },
+  { cls:'Střední',     code:'m', length:'±0,1–±0,5 mm',   angle:'±0°10′–±1°30′', usage:'Obvyklé obrábění (default)' },
+  { cls:'Hrubá',       code:'c', length:'±0,2–±1,0 mm',   angle:'±0°15′–±3°',    usage:'Odlévání, kování' },
+  { cls:'Velmi hrubá', code:'v', length:'±0,5–±2,0 mm',   angle:'±0°30′–±5°',    usage:'Surové výrobky' },
 ]
 
-/* ---- ULOŽENÍ ---- */
 const fits = [
   { fit:'H7/h6', type:'Přechodné', desc:'Snadné ruční zasunutí – ložiska, ozubená kola' },
   { fit:'H7/f7', type:'Kluzné',    desc:'Kluzné uložení – hřídele v kluzných ložiskách' },
@@ -407,6 +599,36 @@ const fits = [
   { fit:'H7/s6', type:'Přesah',    desc:'Velký přesah – těžce namáhané spoje' },
   { fit:'H8/e8', type:'Volné',     desc:'Volné kluzné – čerpadla, kompresory' },
   { fit:'H9/d9', type:'Volné',     desc:'Velmi volné – pohyblivé části, pístnice' },
+]
+
+const materials = [
+  { name:'Ocel nelegovaná (C45)',    iso:'P', vcRough:'100–200',  vcFinish:'150–300',  fRough:'0,2–0,5',  fFinish:'0,05–0,2',  cooling:'Řezná emulze' },
+  { name:'Ocel legovaná (42CrMo4)',  iso:'P', vcRough:'80–150',   vcFinish:'120–250',  fRough:'0,15–0,4', fFinish:'0,05–0,15', cooling:'Řezná emulze' },
+  { name:'Nerezová ocel (304/316)',  iso:'M', vcRough:'60–120',   vcFinish:'100–180',  fRough:'0,1–0,3',  fFinish:'0,05–0,15', cooling:'Hojné chlazení!' },
+  { name:'Šedá litina (GJL-250)',    iso:'K', vcRough:'80–150',   vcFinish:'120–200',  fRough:'0,2–0,5',  fFinish:'0,1–0,2',   cooling:'Sucho nebo vzduch' },
+  { name:'Hliníkové slitiny',        iso:'N', vcRough:'300–600',  vcFinish:'500–1000', fRough:'0,2–0,5',  fFinish:'0,05–0,2',  cooling:'Řezný olej / sucho' },
+  { name:'Mosaz / bronz',            iso:'N', vcRough:'150–300',  vcFinish:'200–500',  fRough:'0,2–0,4',  fFinish:'0,05–0,2',  cooling:'Sucho nebo vzduch' },
+  { name:'Titan (Ti-6Al-4V)',        iso:'S', vcRough:'30–60',    vcFinish:'50–80',    fRough:'0,1–0,25', fFinish:'0,05–0,1',  cooling:'Hojné chlazení!' },
+  { name:'Tvrzená ocel (>45 HRC)',   iso:'H', vcRough:'60–120',   vcFinish:'80–150',   fRough:'0,1–0,2',  fFinish:'0,05–0,1',  cooling:'CBN nástroj!' },
+  { name:'Plast (PA, PE, POM)',      iso:'N', vcRough:'200–400',  vcFinish:'300–600',  fRough:'0,1–0,3',  fFinish:'0,05–0,15', cooling:'Sucho / vzduch' },
+]
+
+const morseTapers = [
+  { no:0, D:'9,045',  d:'6,401',  L:'56,5',  taper:'20,05', usage:'Malé vrtáky, gravírky' },
+  { no:1, D:'12,065', d:'9,401',  L:'65,5',  taper:'20,05', usage:'Vrtáky ⌀ 6–14 mm' },
+  { no:2, D:'17,780', d:'14,161', L:'80,0',  taper:'20,02', usage:'Vrtáky ⌀ 14–23 mm' },
+  { no:3, D:'23,825', d:'19,131', L:'99,0',  taper:'19,92', usage:'Vrtáky ⌀ 23–31 mm, koníky' },
+  { no:4, D:'31,267', d:'25,154', L:'124,0', taper:'19,95', usage:'Koníky, silné vrtáky' },
+  { no:5, D:'44,399', d:'36,547', L:'156,0', taper:'19,96', usage:'Těžké stroje' },
+  { no:6, D:'63,760', d:'53,000', L:'210,0', taper:'19,97', usage:'Velmi těžké stroje' },
+]
+
+const coolingFluids = [
+  { icon:'💧', name:'Řezná emulze',      desc:'Voda + emulgační olej 3–8%', for:'Ocel, nerez – universal' },
+  { icon:'🫙', name:'Řezný olej',        desc:'Minerální nebo syntetický',  for:'Závity, hliník, přesné operace' },
+  { icon:'💨', name:'Stlačený vzduch',   desc:'Ofukování třísek a chlazení', for:'Litina, plast, hliník' },
+  { icon:'🧊', name:'Minimální mazání (MQL)', desc:'Mlha oleje + vzduch',  for:'Moderní CNC, hliník, ocel' },
+  { icon:'🔥', name:'Sucho (bez chlazení)', desc:'Bez média',              for:'Litina, keramika, CBN nástroje' },
 ]
 </script>
 
@@ -418,7 +640,7 @@ const fits = [
   flex-direction: column;
 }
 
-/* ---- TABS ---- */
+/* ---- TABS (sticky pod app-headerem) ---- */
 .tabs-nav {
   display: flex;
   background: var(--bg-secondary);
@@ -426,17 +648,20 @@ const fits = [
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  position: sticky;
+  top: 56px;   /* výška app-header */
+  z-index: 90;
 }
 .tabs-nav::-webkit-scrollbar { display: none; }
 
 .tab-btn {
   flex: 1;
-  min-width: 70px;
+  min-width: 64px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  padding: 10px 8px;
+  padding: 8px 6px;
   background: none;
   border: none;
   border-bottom: 3px solid transparent;
@@ -451,8 +676,10 @@ const fits = [
   color: var(--accent);
   border-bottom-color: var(--accent);
 }
-.tab-btn__icon { font-size: 20px; line-height: 1; }
-.tab-btn__label { font-size: 11px; font-weight: 600; letter-spacing: 0.5px; }
+.tab-btn__icon { font-size: 18px; line-height: 1; }
+.tab-btn__label { font-size: 10px; font-weight: 600; letter-spacing: 0.4px; white-space: nowrap; }
+
+/* výška tabs-nav: padding(8+8) + icon(18) + gap(2) + label(13) = ~49px → zaokrouhleno 52px */
 
 /* ---- LAYOUT ---- */
 .container-wide {
@@ -464,88 +691,123 @@ const fits = [
 
 /* ---- HEADINGS ---- */
 .section-heading {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--accent);
-  margin: 20px 0 4px;
+  margin: 18px 0 4px;
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 .section-note {
   font-size: 12px;
   color: var(--text-muted);
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 .subsection-heading {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  margin: 24px 0 10px;
+  margin: 22px 0 10px;
   padding-bottom: 6px;
   border-bottom: 1px solid var(--border);
 }
 
-/* ---- TOOL CARDS ---- */
-.tool-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
-  margin-bottom: 24px;
-}
-@media (min-width: 480px) {
-  .tool-grid { grid-template-columns: 1fr 1fr; }
+/* ---- LOADING ---- */
+.loading-state {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-muted);
+  font-size: 14px;
 }
 
-.tool-card {
+/* ---- TOOLS LIST (T1–T30) ---- */
+.tools-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.tool-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 14px;
+  padding: 12px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.15s, background 0.15s;
 }
-.tool-card__header {
+.tool-row:active {
+  background: var(--accent-light);
+  border-color: var(--border-accent);
+}
+
+.tool-row__photo {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
+  justify-content: center;
 }
-.tool-card__icon {
+.tool-row__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.tool-row__noimg {
   font-size: 22px;
-  color: var(--accent);
-  flex-shrink: 0;
-  width: 28px;
-  text-align: center;
+  opacity: 0.3;
 }
-.tool-card__name {
-  font-size: 14px;
+
+.tool-row__info {
+  flex: 1;
+  min-width: 0;
+}
+.tool-row__pos {
+  font-size: 11px;
   font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 2px;
+}
+.tool-row__name {
+  font-size: 14px;
+  font-weight: 600;
   color: var(--text-primary);
-  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.tool-card__desc {
-  font-size: 12px;
+.tool-row__name--empty {
+  color: var(--text-muted);
+  font-weight: 400;
+  font-style: italic;
+}
+.tool-row__material {
+  font-size: 11px;
   color: var(--text-secondary);
-  line-height: 1.5;
-  margin-bottom: 10px;
+  margin-top: 2px;
 }
-.param-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  font-size: 12px;
-  padding: 3px 0;
-  border-top: 1px solid var(--border);
-  gap: 8px;
+.tool-row__rpm {
+  font-size: 11px;
+  color: var(--text-muted);
 }
-.param-row__key {
+
+.tool-row__arrow {
+  font-size: 20px;
   color: var(--text-muted);
   flex-shrink: 0;
-}
-.param-row__val {
-  color: var(--accent);
-  font-weight: 600;
-  text-align: right;
 }
 
 /* ---- TABLES ---- */
@@ -554,6 +816,7 @@ const fits = [
   -webkit-overflow-scrolling: touch;
   border-radius: var(--radius);
   border: 1px solid var(--border);
+  margin-bottom: 4px;
 }
 .data-table {
   width: 100%;
@@ -564,16 +827,18 @@ const fits = [
 .data-table thead {
   background: var(--bg-secondary);
   position: sticky;
-  top: 56px;
+  /* 56px (app-header) + 49px (tabs-nav) = 105px */
+  top: 105px;
+  z-index: 10;
 }
 .data-table th {
-  padding: 10px 12px;
+  padding: 10px 10px;
   text-align: left;
   font-size: 11px;
   font-weight: 700;
   color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.5px;
   border-bottom: 2px solid var(--accent);
   white-space: nowrap;
 }
@@ -586,20 +851,20 @@ const fits = [
   letter-spacing: 0;
 }
 .data-table td {
-  padding: 8px 12px;
+  padding: 8px 10px;
   border-bottom: 1px solid var(--border);
   color: var(--text-primary);
   vertical-align: middle;
 }
 .data-table tr:last-child td { border-bottom: none; }
 .data-table tbody tr:hover { background: var(--accent-light); }
-.tr-highlight { background: rgba(240, 165, 0, 0.06); }
+.tr-highlight { background: rgba(240,165,0,0.06); }
 .tr-highlight .td-name { color: var(--accent); font-weight: 700; }
 
-.td-name { font-weight: 600; white-space: nowrap; }
+.td-name  { font-weight: 600; white-space: nowrap; }
 .td-drill { color: var(--accent); font-weight: 700; }
 .td-usage { color: var(--text-secondary); font-size: 12px; }
-.td-sym { font-size: 18px; text-align: center; }
+.td-sym   { font-size: 18px; text-align: center; }
 
 /* ---- RA CHIP ---- */
 .ra-chip {
@@ -622,20 +887,12 @@ const fits = [
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 12px 14px;
-  min-width: 130px;
+  padding: 10px 12px;
+  min-width: 120px;
   flex: 1;
 }
-.symbol-card__sym {
-  font-size: 22px;
-  display: block;
-  margin-bottom: 6px;
-}
-.symbol-card__desc {
-  font-size: 11px;
-  color: var(--text-secondary);
-  line-height: 1.4;
-}
+.symbol-card__sym  { font-size: 20px; display: block; margin-bottom: 4px; }
+.symbol-card__desc { font-size: 11px; color: var(--text-secondary); line-height: 1.4; }
 
 /* ---- BADGE GROUP ---- */
 .badge-group {
@@ -644,15 +901,16 @@ const fits = [
   border-radius: 4px;
   font-size: 11px;
   font-weight: 600;
+  white-space: nowrap;
 }
-.badge-tvar    { background: rgba(37,99,235,0.2); color: #60a5fa; }
-.badge-poloha  { background: rgba(5,150,105,0.2); color: #34d399; }
+.badge-tvar    { background: rgba(37,99,235,0.2);  color: #60a5fa; }
+.badge-poloha  { background: rgba(5,150,105,0.2);  color: #34d399; }
 .badge-hazeni  { background: rgba(217,119,6,0.2);  color: #fbbf24; }
 
-/* ---- ABBREVIATIONS GRID ---- */
+/* ---- ABBR GRID ---- */
 .abbr-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
   gap: 8px;
   margin-bottom: 12px;
 }
@@ -660,57 +918,112 @@ const fits = [
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 10px 12px;
+  padding: 8px 10px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
-.abbr-card__sym {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--accent);
-}
-.abbr-card__name {
-  font-size: 11px;
-  color: var(--text-secondary);
-}
+.abbr-card__sym  { font-size: 16px; font-weight: 700; color: var(--accent); }
+.abbr-card__name { font-size: 10px; color: var(--text-secondary); }
 
 /* ---- FITS GRID ---- */
 .fits-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
   margin-bottom: 24px;
-}
-@media (min-width: 480px) {
-  .fits-grid { grid-template-columns: 1fr 1fr; }
 }
 .fit-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 12px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
+  padding: 10px 12px;
 }
-.fit-card__fit {
-  font-size: 16px;
+.fit-card__fit  { font-size: 15px; font-weight: 700; color: var(--accent); }
+.fit-card__type { font-size: 10px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; margin: 2px 0; }
+.fit-card__desc { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
+
+/* ---- ISO MATERIAL BADGE ---- */
+.iso-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.iso-p { background: rgba(37,99,235,0.2);   color: #60a5fa; }
+.iso-m { background: rgba(220,38,38,0.2);   color: #f87171; }
+.iso-k { background: rgba(217,119,6,0.2);   color: #fbbf24; }
+.iso-n { background: rgba(5,150,105,0.2);   color: #34d399; }
+.iso-s { background: rgba(124,58,237,0.2);  color: #a78bfa; }
+.iso-h { background: rgba(100,100,100,0.2); color: #aaaaaa; }
+
+/* ---- KALKULAČKA ---- */
+.calc-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 8px;
+}
+.calc-card__title {
+  font-size: 14px;
   font-weight: 700;
   color: var(--accent);
+  margin-bottom: 4px;
 }
-.fit-card__type {
+.calc-note {
   font-size: 11px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.fit-card__desc {
-  font-size: 12px;
   color: var(--text-muted);
-  line-height: 1.4;
+  font-family: monospace;
+  margin-bottom: 14px;
 }
+.calc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.calc-result {
+  margin-top: 14px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.calc-result--empty {
+  color: var(--text-muted);
+  font-size: 13px;
+  justify-content: center;
+}
+.calc-result__label { font-size: 13px; color: var(--text-secondary); }
+.calc-result__value { font-size: 20px; font-weight: 700; color: var(--accent); }
+.calc-divider {
+  border-top: 1px solid var(--border);
+  margin: 16px 0;
+}
+
+/* ---- CHLAZENÍ ---- */
+.cooling-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+@media (min-width: 480px) {
+  .cooling-grid { grid-template-columns: repeat(3, 1fr); }
+}
+.cooling-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+}
+.cooling-card__icon  { font-size: 22px; margin-bottom: 6px; }
+.cooling-card__name  { font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+.cooling-card__desc  { font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; line-height: 1.4; }
+.cooling-card__for   { font-size: 11px; color: var(--accent); font-weight: 600; }
 
 /* ---- INFO BOX ---- */
 .info-box {
@@ -718,24 +1031,106 @@ const fits = [
   border: 1px solid var(--border-accent);
   border-left: 4px solid var(--accent);
   border-radius: var(--radius-sm);
-  padding: 14px 16px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
 }
-.info-box__title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--accent);
-  margin-bottom: 6px;
-}
-.info-box__text {
-  font-size: 13px;
-  color: var(--text-secondary);
-  line-height: 1.7;
-}
+.info-box__title { font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 6px; }
+.info-box__text  { font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
 .info-box__text code {
   background: var(--bg-input);
   padding: 1px 6px;
   border-radius: 3px;
   font-size: 12px;
   color: var(--text-primary);
+}
+
+/* ---- EDIT MODAL ---- */
+.edit-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  backdrop-filter: blur(2px);
+}
+
+.edit-modal {
+  width: 100%;
+  max-height: 92dvh;
+  background: var(--bg-secondary);
+  border-top: 2px solid var(--accent);
+  border-radius: 16px 16px 0 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.edit-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.edit-modal__title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.edit-modal__close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+.edit-modal__body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px;
+}
+
+.edit-modal__footer {
+  display: flex;
+  gap: 10px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.edit-modal__footer .btn { flex: 1; }
+
+/* Skrytý file input */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.photo-current img {
+  width: 100%;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  object-fit: contain;
+  background: #000;
+  max-height: 200px;
+}
+
+/* ---- ANIMACE MODALU ---- */
+.slide-up-enter-active, .slide-up-leave-active {
+  transition: opacity 0.2s, transform 0.25s;
+}
+.slide-up-enter-from, .slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(100%);
 }
 </style>
