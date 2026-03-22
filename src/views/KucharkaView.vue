@@ -616,6 +616,7 @@
           </div>
 
           <div class="edit-modal__footer">
+            <button class="btn btn-danger btn-icon" type="button" @click="confirmDeleteTool = 1" title="Smazat nůž">🗑</button>
             <button class="btn btn-ghost" @click="closeEdit">Zrušit</button>
             <button class="btn btn-primary" @click="saveTool">💾 Uložit</button>
           </div>
@@ -639,6 +640,39 @@
             <button class="btn btn-danger" type="button" @click="doRemoveToolPhoto">
               Odebrat
             </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- DIALOG: Smazat nůž – krok 1 (Zrušit vlevo / Ano vpravo) -->
+    <transition name="fade">
+      <div v-if="confirmDeleteTool === 1" class="modal-overlay" @click.self="confirmDeleteTool = 0">
+        <div class="modal">
+          <div class="modal__title">Smazat nůž?</div>
+          <div class="modal__text">
+            Chcete smazat nástroj <strong>{{ editModal.tool.id }}</strong>
+            <span v-if="editModal.tool.name"> – {{ editModal.tool.name }}</span>?
+          </div>
+          <div class="modal__actions">
+            <button class="btn btn-ghost" type="button" @click="confirmDeleteTool = 0">Zrušit</button>
+            <button class="btn btn-danger" type="button" @click="confirmDeleteTool = 2">Ano, smazat →</button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- DIALOG: Smazat nůž – krok 2 (Smazat vlevo / Zrušit vpravo) -->
+    <transition name="fade">
+      <div v-if="confirmDeleteTool === 2" class="modal-overlay" @click.self="confirmDeleteTool = 0">
+        <div class="modal">
+          <div class="modal__title">⚠️ Opravdu smazat?</div>
+          <div class="modal__text">
+            Nástroj <strong>{{ editModal.tool.id }}</strong> bude trvale smazán včetně všech fotek.
+          </div>
+          <div class="modal__actions">
+            <button class="btn btn-danger" type="button" @click="doDeleteTool">Smazat natrvalo</button>
+            <button class="btn btn-ghost" type="button" @click="confirmDeleteTool = 0">Zrušit</button>
           </div>
         </div>
       </div>
@@ -761,6 +795,16 @@ const confirmRemoveToolPhoto = ref(null)
 function doRemoveToolPhoto() {
   editModal.form.photos.splice(confirmRemoveToolPhoto.value, 1)
   confirmRemoveToolPhoto.value = null
+}
+
+// Potvrzení smazání nástroje (0 = skryto, 1 = krok 1, 2 = krok 2)
+const confirmDeleteTool = ref(0)
+
+function doDeleteTool() {
+  const pos = editModal.tool.id
+  confirmDeleteTool.value = 0
+  editModal.open = false
+  toolsStore.deleteTool(pos)
 }
 
 // Fullscreen galerie nástroje

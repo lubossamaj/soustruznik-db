@@ -9,6 +9,7 @@ import {
   collection,
   doc,
   setDoc,
+  deleteDoc,
   onSnapshot,
 } from 'firebase/firestore'
 import { db } from '../firebase.js'
@@ -147,5 +148,15 @@ export const useToolsStore = defineStore('tools', () => {
     })()
   }
 
-  return { tools, loading, error, getToolByPosition, addTool, saveTool }
+  function deleteTool(pos) {
+    // Optimistic removal
+    tools.value = tools.value.filter(t => t.id !== pos)
+    // Firestore smazání
+    deleteDoc(doc(db, COL, pos)).catch(err => {
+      console.error('Tools deleteTool error:', err)
+      error.value = 'Nepodařilo se smazat nástroj.'
+    })
+  }
+
+  return { tools, loading, error, getToolByPosition, addTool, saveTool, deleteTool }
 })
