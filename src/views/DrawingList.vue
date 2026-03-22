@@ -4,7 +4,8 @@
     <header class="app-header">
       <div class="app-header__inner">
         <span class="app-header__title">
-          ⚙ Soustružník
+          <span class="app-header__title-icon">⚙</span>
+          Soustružník
         </span>
         <button class="kucharka-btn" @click="router.push({ name: 'Kucharka' })" title="Soustružnická kuchařka">
           <span class="kucharka-btn__icon">🧑‍🍳</span>
@@ -126,6 +127,15 @@ function goToNew() {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
+}
+
+/* Ikona ozubeného kola v nadpisu */
+.app-header__title-icon {
+  font-size: 20px;
+  line-height: 1;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 2px;
 }
 
 /* Tlačítko Kuchařka v headeru */
