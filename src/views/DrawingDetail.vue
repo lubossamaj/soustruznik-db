@@ -156,6 +156,7 @@
     </transition>
 
     <!-- POTVRZOVACÍ DIALOG SMAZÁNÍ – krok 1 -->
+    <!-- Zrušit VLEVO · Ano, smazat VPRAVO -->
     <transition name="fade">
       <div v-if="confirmDelete === 1" class="modal-overlay" @click.self="confirmDelete = 0">
         <div class="modal">
@@ -169,7 +170,7 @@
               Zrušit
             </button>
             <button class="btn btn-danger" type="button" @click="confirmDelete = 2">
-              Ano, smazat
+              Ano, smazat →
             </button>
           </div>
         </div>
@@ -177,6 +178,7 @@
     </transition>
 
     <!-- POTVRZOVACÍ DIALOG SMAZÁNÍ – krok 2 -->
+    <!-- Smazat natrvalo VLEVO · Zrušit VPRAVO (přehozeno!) -->
     <transition name="fade">
       <div v-if="confirmDelete === 2" class="modal-overlay" @click.self="confirmDelete = 0">
         <div class="modal">
@@ -186,11 +188,11 @@
             bude trvale smazán. Tuto akci nelze vrátit zpět.
           </div>
           <div class="modal__actions">
-            <button class="btn btn-ghost" type="button" @click="confirmDelete = 0">
-              Zrušit
-            </button>
             <button class="btn btn-danger" type="button" @click="deleteDrawing">
               Smazat natrvalo
+            </button>
+            <button class="btn btn-ghost" type="button" @click="confirmDelete = 0">
+              Zrušit
             </button>
           </div>
         </div>
