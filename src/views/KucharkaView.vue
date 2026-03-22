@@ -209,6 +209,78 @@
         <section v-if="activeTab === 'vykres'">
           <h2 class="section-heading">Výkresové vysvětlivky</h2>
 
+          <!-- ISO 2768 TABULKA S VYHLEDÁVAČEM -->
+          <h3 class="subsection-heading">Všeobecné tolerance ISO 2768 – délkové úchylky</h3>
+
+          <div class="tol-lookup-card">
+            <div class="tol-lookup__label">Zadej rozměr pro zvýraznění řádku</div>
+            <div class="tol-lookup__row">
+              <input
+                v-model.number="tolDim"
+                type="number"
+                inputmode="decimal"
+                class="form-control"
+                placeholder="např. 180"
+                min="0.5"
+                step="0.1"
+                style="max-width:160px"
+              />
+              <span class="tol-lookup__unit">mm</span>
+              <span v-if="tolRow" class="tol-lookup__match">→ řádek {{ tolRow.label }}</span>
+            </div>
+          </div>
+
+          <div class="table-scroll">
+            <table class="data-table tol-table">
+              <thead>
+                <tr>
+                  <th>Rozsah [mm]</th>
+                  <th class="th-f">f – jemná</th>
+                  <th class="th-m">m – střední</th>
+                  <th class="th-c">c – hrubá</th>
+                  <th class="th-v">v – velmi hrubá</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="row in iso2768detail"
+                  :key="row.label"
+                  :class="{ 'tol-row--active': tolRow && tolRow.label === row.label }"
+                >
+                  <td class="td-name">{{ row.label }}</td>
+                  <td class="td-f">{{ row.f }}</td>
+                  <td class="td-m">{{ row.m }}</td>
+                  <td class="td-c">{{ row.c }}</td>
+                  <td class="td-v">{{ row.v }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Výsledkové boxy pro zadaný rozměr -->
+          <div v-if="tolRow" class="tol-result-grid">
+            <div class="tol-result-box tol-result-box--f">
+              <div class="tol-result-box__cls">f – jemná</div>
+              <div class="tol-result-box__val">{{ tolRow.f }}</div>
+              <div class="tol-result-box__dim">pro {{ tolDim }} mm</div>
+            </div>
+            <div class="tol-result-box tol-result-box--m">
+              <div class="tol-result-box__cls">m – střední</div>
+              <div class="tol-result-box__val">{{ tolRow.m }}</div>
+              <div class="tol-result-box__dim">pro {{ tolDim }} mm</div>
+            </div>
+            <div class="tol-result-box tol-result-box--c">
+              <div class="tol-result-box__cls">c – hrubá</div>
+              <div class="tol-result-box__val">{{ tolRow.c }}</div>
+              <div class="tol-result-box__dim">pro {{ tolDim }} mm</div>
+            </div>
+            <div class="tol-result-box tol-result-box--v">
+              <div class="tol-result-box__cls">v – velmi hrubá</div>
+              <div class="tol-result-box__val">{{ tolRow.v }}</div>
+              <div class="tol-result-box__dim">pro {{ tolDim }} mm</div>
+            </div>
+          </div>
+
           <h3 class="subsection-heading">Geometrické tolerance (GD&T)</h3>
           <div class="table-scroll">
             <table class="data-table">
@@ -237,30 +309,6 @@
               <span class="abbr-card__sym">{{ a.sym }}</span>
               <span class="abbr-card__name">{{ a.name }}</span>
             </div>
-          </div>
-
-          <h3 class="subsection-heading">Všeobecné tolerance ISO 2768</h3>
-          <div class="table-scroll">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Třída</th>
-                  <th>Kód</th>
-                  <th>Délkové úchylky</th>
-                  <th>Úhlové úchylky</th>
-                  <th>Použití</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="iso in iso2768" :key="iso.cls">
-                  <td class="td-name">{{ iso.cls }}</td>
-                  <td><strong>{{ iso.code }}</strong></td>
-                  <td>{{ iso.length }}</td>
-                  <td>{{ iso.angle }}</td>
-                  <td class="td-usage">{{ iso.usage }}</td>
-                </tr>
-              </tbody>
-            </table>
           </div>
 
           <h3 class="subsection-heading">Příklady uložení – soustava díry H</h3>
@@ -632,6 +680,26 @@ const calcWeight = computed(() => {
   }
 })
 
+// ---- ISO 2768 TOLERANCE VYHLEDÁVAČ ----
+const tolDim = ref(null)
+
+const iso2768detail = [
+  { label:'0,5 – 3',      min:0.5,   max:3,    f:'±0,05', m:'±0,1',  c:'±0,2',  v:'–'    },
+  { label:'> 3 – 6',      min:3,     max:6,    f:'±0,05', m:'±0,1',  c:'±0,3',  v:'±0,5' },
+  { label:'> 6 – 30',     min:6,     max:30,   f:'±0,1',  m:'±0,2',  c:'±0,5',  v:'±1,0' },
+  { label:'> 30 – 120',   min:30,    max:120,  f:'±0,15', m:'±0,3',  c:'±0,8',  v:'±1,5' },
+  { label:'> 120 – 400',  min:120,   max:400,  f:'±0,2',  m:'±0,5',  c:'±1,2',  v:'±2,5' },
+  { label:'> 400 – 1000', min:400,   max:1000, f:'±0,3',  m:'±0,8',  c:'±2,0',  v:'±4,0' },
+  { label:'> 1000 – 2000',min:1000,  max:2000, f:'±0,5',  m:'±1,2',  c:'±3,0',  v:'±6,0' },
+  { label:'> 2000 – 4000',min:2000,  max:4000, f:'–',     m:'±2,0',  c:'±4,0',  v:'±8,0' },
+]
+
+const tolRow = computed(() => {
+  if (!tolDim.value || tolDim.value <= 0) return null
+  return iso2768detail.find(r => tolDim.value > r.min && tolDim.value <= r.max)
+    ?? (tolDim.value <= 0.5 ? null : iso2768detail[iso2768detail.length - 1])
+})
+
 // ---- KALKULÁTOR ZÁVITŮ ----
 const threadCalc = reactive({ type: 'M', size: null })
 
@@ -816,12 +884,6 @@ const abbreviations = [
   { sym:'∅',   name:'Průměr (alt.)'  },
 ]
 
-const iso2768 = [
-  { cls:'Jemná',       code:'f', length:'±0,05–±0,3 mm',  angle:'±0°5′–±1°',     usage:'Přesné strojní díly' },
-  { cls:'Střední',     code:'m', length:'±0,1–±0,5 mm',   angle:'±0°10′–±1°30′', usage:'Obvyklé obrábění (default)' },
-  { cls:'Hrubá',       code:'c', length:'±0,2–±1,0 mm',   angle:'±0°15′–±3°',    usage:'Odlévání, kování' },
-  { cls:'Velmi hrubá', code:'v', length:'±0,5–±2,0 mm',   angle:'±0°30′–±5°',    usage:'Surové výrobky' },
-]
 
 const fits = [
   { fit:'H7/h6', type:'Přechodné', desc:'Snadné ruční zasunutí – ložiska, ozubená kola' },
@@ -1325,6 +1387,100 @@ const materials = [
   gap: 10px;
 }
 .thread-empty__icon { font-size: 40px; opacity: 0.4; }
+
+/* ---- ISO 2768 TOLERANCE ---- */
+.tol-lookup-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+.tol-lookup__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+.tol-lookup__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.tol-lookup__unit {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+.tol-lookup__match {
+  font-size: 13px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Barevné hlavičky sloupců */
+.tol-table .th-f { color: #60a5fa; }
+.tol-table .th-m { color: #34d399; }
+.tol-table .th-c { color: #fbbf24; }
+.tol-table .th-v { color: #f87171; }
+
+.tol-table .td-f { color: #60a5fa; font-weight: 600; }
+.tol-table .td-m { color: #34d399; font-weight: 600; }
+.tol-table .td-c { color: #fbbf24; font-weight: 600; }
+.tol-table .td-v { color: #f87171; font-weight: 600; }
+
+/* Zvýrazněný řádek */
+.tol-row--active {
+  background: rgba(240, 165, 0, 0.12) !important;
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.tol-row--active .td-name { color: var(--accent); font-weight: 700; }
+
+/* Výsledkové boxy */
+.tol-result-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+@media (min-width: 480px) {
+  .tol-result-grid { grid-template-columns: repeat(4, 1fr); }
+}
+.tol-result-box {
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  border: 1px solid;
+  text-align: center;
+}
+.tol-result-box--f { background: rgba(96,165,250,0.1); border-color: rgba(96,165,250,0.3); }
+.tol-result-box--m { background: rgba(52,211,153,0.1); border-color: rgba(52,211,153,0.3); }
+.tol-result-box--c { background: rgba(251,191,36,0.1); border-color: rgba(251,191,36,0.3); }
+.tol-result-box--v { background: rgba(248,113,113,0.1); border-color: rgba(248,113,113,0.3); }
+
+.tol-result-box__cls {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+  color: var(--text-secondary);
+}
+.tol-result-box__val {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.tol-result-box--f .tol-result-box__val { color: #60a5fa; }
+.tol-result-box--m .tol-result-box__val { color: #34d399; }
+.tol-result-box--c .tol-result-box__val { color: #fbbf24; }
+.tol-result-box--v .tol-result-box__val { color: #f87171; }
+.tol-result-box__dim {
+  font-size: 10px;
+  color: var(--text-muted);
+}
 
 /* ---- INFO BOX ---- */
 .info-box {
