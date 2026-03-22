@@ -50,7 +50,7 @@ const EXAMPLE_DRAWINGS = [
       {
         operationNumber: 1,
         operationType: 'Hrubování',
-        tool: 'T1',
+        tool: 'N1',
         feed: 0.03,
         speed: 300,
         potentiometer: 40,
@@ -61,7 +61,7 @@ const EXAMPLE_DRAWINGS = [
       {
         operationNumber: 2,
         operationType: 'Dokončování',
-        tool: 'T20',
+        tool: 'N20',
         feed: 0.10,
         speed: 200,
         potentiometer: 10,
@@ -78,7 +78,7 @@ const EXAMPLE_DRAWINGS = [
       {
         operationNumber: 1,
         operationType: 'Podélné soustružení',
-        tool: 'T5',
+        tool: 'N5',
         feed: 0.05,
         speed: 450,
         potentiometer: 60,
@@ -107,7 +107,7 @@ function normalizeOperations(ops) {
     id:              op.id              || generateOpId(),
     operationNumber: index + 1,
     operationType:   op.operationType  || '',
-    tool:            op.tool           || 'T1',
+    tool:            op.tool           || 'N1',
     feed:            parseFloat(op.feed)        || 0,
     speed:           parseInt(op.speed)         || 0,
     potentiometer:   parseInt(op.potentiometer) || 0,

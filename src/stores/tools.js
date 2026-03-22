@@ -14,12 +14,13 @@ import {
 import { db } from '../firebase.js'
 
 const COL = 'tools'
-const ALL_POSITIONS = Array.from({ length: 30 }, (_, i) => `T${i + 1}`)
+const ALL_POSITIONS = Array.from({ length: 30 }, (_, i) => `N${i + 1}`)
 
 function emptyTool(pos) {
   return {
     id: pos,
     position: pos,
+    manufacturerCode: '',
     name: '',
     photo: null,
     description: '',
@@ -98,14 +99,15 @@ export const useToolsStore = defineStore('tools', () => {
         if (photo) photo = await compressImage(photo)
 
         await setDoc(doc(db, COL, pos), {
-          position: pos,
-          name:        data.name        ?? '',
+          position:         pos,
+          manufacturerCode: data.manufacturerCode ?? '',
+          name:             data.name             ?? '',
           photo,
-          description: data.description ?? '',
-          rpmMin:      data.rpmMin      ?? '',
-          rpmMax:      data.rpmMax      ?? '',
-          material:    data.material    ?? '',
-          note:        data.note        ?? '',
+          description:      data.description      ?? '',
+          rpmMin:           data.rpmMin            ?? '',
+          rpmMax:           data.rpmMax            ?? '',
+          material:         data.material          ?? '',
+          note:             data.note              ?? '',
         })
       } catch (err) {
         console.error('Tools save error:', err)

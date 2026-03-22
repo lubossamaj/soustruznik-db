@@ -29,7 +29,7 @@
 
         <!-- ==================== NOŽE ==================== -->
         <section v-if="activeTab === 'noze'">
-          <h2 class="section-heading">Nástroje T1 – T30</h2>
+          <h2 class="section-heading">Nástroje N1 – N30</h2>
           <p class="section-note">Klikni na nástroj pro zobrazení nebo editaci</p>
 
           <div v-if="toolsStore.loading" class="loading-state">Načítám nástroje…</div>
@@ -49,7 +49,10 @@
 
               <!-- Info -->
               <div class="tool-row__info">
-                <div class="tool-row__pos">{{ tool.id }}</div>
+                <div class="tool-row__pos">
+                  {{ tool.id }}
+                  <span v-if="tool.manufacturerCode" class="tool-row__mfr">{{ tool.manufacturerCode }}</span>
+                </div>
                 <div class="tool-row__name" :class="{ 'tool-row__name--empty': !tool.name }">
                   {{ tool.name || 'Nenastaveno' }}
                 </div>
@@ -514,6 +517,13 @@
 
           <div class="edit-modal__body">
 
+            <!-- Označení výrobce -->
+            <div class="form-group">
+              <label class="form-label">Označení výrobce / katalogové číslo</label>
+              <input v-model="editModal.form.manufacturerCode" type="text" class="form-control"
+                placeholder="např. Iskar 1350, CNMG 120408, SDNCN 2020" autocomplete="off" spellcheck="false" />
+            </div>
+
             <!-- Fotka -->
             <div class="form-group">
               <label class="form-label">Fotka nástroje</label>
@@ -613,7 +623,7 @@ const editModal = reactive({
   open: false,
   tool: {},
   form: {
-    name: '', photo: null, description: '',
+    manufacturerCode: '', name: '', photo: null, description: '',
     rpmMin: '', rpmMax: '', material: '', note: '',
   },
 })
@@ -621,13 +631,14 @@ const editModal = reactive({
 function openEdit(tool) {
   editModal.tool = tool
   editModal.form = {
-    name:        tool.name        || '',
-    photo:       tool.photo       || null,
-    description: tool.description || '',
-    rpmMin:      tool.rpmMin      || '',
-    rpmMax:      tool.rpmMax      || '',
-    material:    tool.material    || '',
-    note:        tool.note        || '',
+    manufacturerCode: tool.manufacturerCode || '',
+    name:             tool.name             || '',
+    photo:            tool.photo            || null,
+    description:      tool.description      || '',
+    rpmMin:           tool.rpmMin           || '',
+    rpmMax:           tool.rpmMax           || '',
+    material:         tool.material         || '',
+    note:             tool.note             || '',
   }
   editModal.open = true
 }
@@ -1128,6 +1139,21 @@ const materials = [
   text-transform: uppercase;
   letter-spacing: 0.8px;
   margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.tool-row__mfr {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0 5px;
+  letter-spacing: 0.2px;
+  text-transform: none;
 }
 .tool-row__name {
   font-size: 14px;

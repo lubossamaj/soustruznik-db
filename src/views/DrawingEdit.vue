@@ -188,7 +188,7 @@ function emptyOperation() {
   return {
     id: newOpId(),
     operationNumber: form.operations.length + 1,
-    tool: 'T1',
+    tool: 'N1',
     feed: 0.05,
     speed: 300,
     potentiometer: 50,

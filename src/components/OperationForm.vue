@@ -47,7 +47,7 @@
         </select>
       </div>
 
-      <!-- Nástroj T1–T20 -->
+      <!-- Nástroj N1–N30 -->
       <div class="form-group">
         <label class="form-label">Nástroj <span>*</span></label>
         <select
@@ -210,8 +210,8 @@ const operationTypes = [
   'Dokončování',
 ]
 
-// Seznam nástrojů T1–T20
-const tools = Array.from({ length: 20 }, (_, i) => `T${i + 1}`)
+// Seznam nástrojů N1–N30
+const tools = Array.from({ length: 30 }, (_, i) => `N${i + 1}`)
 
 // Hodnoty potenciometru
 const potentiometerValues = [0, 2, 4, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120]
