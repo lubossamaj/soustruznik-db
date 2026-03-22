@@ -182,8 +182,8 @@
 
             <div class="form-group" style="margin-bottom:12px">
               <label class="form-label">Materiál</label>
-              <div class="shape-toggle">
-                <button v-for="m in weightMaterials" :key="m.id" class="shape-btn shape-btn--compact" :class="{ 'shape-btn--active': weight.material === m.id }" @click="weight.material = m.id" type="button">{{ m.label }}</button>
+              <div class="mat-grid">
+                <button v-for="m in weightMaterials" :key="m.id" class="shape-btn" :class="{ 'shape-btn--active': weight.material === m.id }" @click="weight.material = m.id" type="button">{{ m.label }}</button>
               </div>
               <div class="calc-note" style="margin-top:4px">{{ weightMaterials.find(m=>m.id===weight.material)?.name }} – hustota {{ weightMaterials.find(m=>m.id===weight.material)?.rho }} kg/m³</div>
             </div>
@@ -658,7 +658,7 @@ const weight = reactive({ shape: 'round', material: 'ocel', d: null, L: null, a:
 
 const weightMaterials = [
   { id: 'ocel',  label: 'Fe',  name: 'Ocel',    rho: 7850 },
-  { id: 'nerez', label: 'SS',  name: 'Nerez',   rho: 7900 },
+  { id: 'nerez', label: 'Nerez', name: 'Nerez',   rho: 7900 },
   { id: 'hlinik',label: 'Al',  name: 'Hliník',  rho: 2700 },
   { id: 'med',   label: 'Cu',  name: 'Měď',     rho: 8900 },
 ]
@@ -1361,13 +1361,17 @@ const materials = [
   -webkit-tap-highlight-color: transparent;
   white-space: nowrap;
 }
-.shape-btn--compact {
+.mat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.mat-grid .shape-btn {
   flex: none;
-  min-width: 52px;
-  padding: 9px 14px;
-  font-size: 14px;
+  min-width: unset;
+  width: 100%;
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.5px;
 }
 .shape-btn--active {
   border-color: var(--accent);
