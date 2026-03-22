@@ -183,9 +183,9 @@
             <div class="form-group" style="margin-bottom:12px">
               <label class="form-label">Materiál</label>
               <div class="shape-toggle">
-                <button v-for="m in weightMaterials" :key="m.id" class="shape-btn" :class="{ 'shape-btn--active': weight.material === m.id }" @click="weight.material = m.id" type="button">{{ m.label }}</button>
+                <button v-for="m in weightMaterials" :key="m.id" class="shape-btn shape-btn--compact" :class="{ 'shape-btn--active': weight.material === m.id }" @click="weight.material = m.id" type="button">{{ m.label }}</button>
               </div>
-              <div class="calc-note" style="margin-top:4px">Hustota: {{ weightMaterials.find(m=>m.id===weight.material)?.rho }} kg/m³</div>
+              <div class="calc-note" style="margin-top:4px">{{ weightMaterials.find(m=>m.id===weight.material)?.name }} – hustota {{ weightMaterials.find(m=>m.id===weight.material)?.rho }} kg/m³</div>
             </div>
 
             <div v-if="weight.shape === 'round'" class="calc-grid">
@@ -657,9 +657,10 @@ const calcFeed = computed(() => {
 const weight = reactive({ shape: 'round', material: 'ocel', d: null, L: null, a: null, b: null })
 
 const weightMaterials = [
-  { id: 'ocel',  label: 'Ocel',  rho: 7850 },
-  { id: 'nerez', label: 'Nerez', rho: 7900 },
-  { id: 'med',   label: 'Měď',   rho: 8900 },
+  { id: 'ocel',  label: 'Fe',  name: 'Ocel',    rho: 7850 },
+  { id: 'nerez', label: 'SS',  name: 'Nerez',   rho: 7900 },
+  { id: 'hlinik',label: 'Al',  name: 'Hliník',  rho: 2700 },
+  { id: 'med',   label: 'Cu',  name: 'Měď',     rho: 8900 },
 ]
 
 const calcWeight = computed(() => {
@@ -1359,6 +1360,14 @@ const materials = [
   transition: border-color 0.15s, color 0.15s, background 0.15s;
   -webkit-tap-highlight-color: transparent;
   white-space: nowrap;
+}
+.shape-btn--compact {
+  flex: none;
+  min-width: 52px;
+  padding: 9px 14px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
 }
 .shape-btn--active {
   border-color: var(--accent);
