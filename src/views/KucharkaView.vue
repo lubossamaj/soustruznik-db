@@ -183,9 +183,20 @@
             <div class="form-group" style="margin-bottom:12px">
               <label class="form-label">Materiál</label>
               <div class="mat-grid">
-                <button v-for="m in weightMaterials" :key="m.id" class="shape-btn" :class="{ 'shape-btn--active': weight.material === m.id }" @click="weight.material = m.id" type="button">{{ m.label }}</button>
+                <button
+                  v-for="m in weightMaterials"
+                  :key="m.id"
+                  class="mat-btn"
+                  :class="{ 'mat-btn--active': weight.material === m.id }"
+                  :style="{ '--mat-color': m.color }"
+                  @click="weight.material = m.id"
+                  type="button"
+                >
+                  <span class="mat-btn__symbol">{{ m.label }}</span>
+                  <span class="mat-btn__name">{{ m.name }}</span>
+                  <span class="mat-btn__rho">{{ m.rho }} kg/m³</span>
+                </button>
               </div>
-              <div class="calc-note" style="margin-top:4px">{{ weightMaterials.find(m=>m.id===weight.material)?.name }} – hustota {{ weightMaterials.find(m=>m.id===weight.material)?.rho }} kg/m³</div>
             </div>
 
             <div v-if="weight.shape === 'round'" class="calc-grid">
@@ -657,9 +668,9 @@ const calcFeed = computed(() => {
 const weight = reactive({ shape: 'round', material: 'ocel', d: null, L: null, a: null, b: null })
 
 const weightMaterials = [
-  { id: 'ocel',  label: 'Fe',  name: 'Ocel / Nerez', rho: 7874 },
-  { id: 'hlinik',label: 'Al',  name: 'Hliník',       rho: 2700 },
-  { id: 'med',   label: 'Cu',  name: 'Měď',          rho: 8900 },
+  { id: 'ocel',  label: 'Fe',  name: 'Ocel / Nerez', rho: 7874, color: '#9ca3af' },
+  { id: 'hlinik',label: 'Al',  name: 'Hliník',       rho: 2700, color: '#60a5fa' },
+  { id: 'med',   label: 'Cu',  name: 'Měď',          rho: 8900, color: '#fb923c' },
 ]
 
 const calcWeight = computed(() => {
@@ -1365,12 +1376,43 @@ const materials = [
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
 }
-.mat-grid .shape-btn {
-  flex: none;
-  min-width: unset;
+.mat-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 12px 8px;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-family: var(--font);
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
   width: 100%;
-  font-size: 13px;
-  font-weight: 700;
+}
+.mat-btn:active { transform: scale(0.97); }
+.mat-btn--active {
+  border-color: var(--mat-color);
+  background: color-mix(in srgb, var(--mat-color) 12%, var(--bg-secondary));
+}
+.mat-btn__symbol {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--mat-color);
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+.mat-btn__name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+  line-height: 1.3;
+}
+.mat-btn__rho {
+  font-size: 10px;
+  color: var(--text-muted);
 }
 .shape-btn--active {
   border-color: var(--accent);
