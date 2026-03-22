@@ -231,10 +231,19 @@ export const useDrawingsStore = defineStore('drawings', () => {
       // Převedeme Firestore dokumenty na plain objekty pro Vue komponenty
       drawings.value = snapshot.docs.map((docSnap) => {
         const data = docSnap.data()
+        // Backward compat: old docs have `photo` (string|null), new have `photos` (array)
+        let photos
+        if (Array.isArray(data.photos)) {
+          photos = data.photos
+        } else if (data.photo) {
+          photos = [data.photo]
+        } else {
+          photos = []
+        }
         return {
           id:            docSnap.id,
           drawingNumber: data.drawingNumber ?? '',
-          photo:         data.photo         ?? null,
+          photos,
           createdAt:     toISOString(data.createdAt),
           updatedAt:     toISOString(data.updatedAt),
           operations:    Array.isArray(data.operations) ? data.operations : [],
@@ -267,7 +276,7 @@ export const useDrawingsStore = defineStore('drawings', () => {
       const newDocRef = doc(collection(db, COL))
       await setDoc(newDocRef, {
         drawingNumber: example.drawingNumber,
-        photo:         null,
+        photos:        [],
         createdAt:     serverTimestamp(),
         updatedAt:     serverTimestamp(),
         operations:    normalizeOperations(example.operations),
@@ -315,12 +324,10 @@ export const useDrawingsStore = defineStore('drawings', () => {
     const operations = normalizeOperations(drawingData.operations)
 
     // ── Optimistic update: okamžitě přidáme do reaktivního pole ──
-    // Foto je zatím originální base64 (vysoké rozlišení) – bude nahrazeno
-    // zkomprimovanou verzí po dokončení Canvas API na pozadí
     drawings.value.unshift({
       id,
       drawingNumber: drawingData.drawingNumber,
-      photo:         drawingData.photo ?? null,
+      photos:        Array.isArray(drawingData.photos) ? drawingData.photos : [],
       createdAt:     now,
       updatedAt:     now,
       operations,
@@ -329,10 +336,10 @@ export const useDrawingsStore = defineStore('drawings', () => {
     // ── Async komprese + zápis do Firestore na pozadí ──
     ;(async () => {
       try {
-        const photo = await processPhoto(drawingData.photo)
+        const photos = await Promise.all((drawingData.photos || []).map(p => processPhoto(p)))
         await setDoc(newDocRef, {
           drawingNumber: drawingData.drawingNumber,
-          photo,
+          photos,
           createdAt:     serverTimestamp(),
           updatedAt:     serverTimestamp(),
           operations,
@@ -365,9 +372,7 @@ export const useDrawingsStore = defineStore('drawings', () => {
       drawings.value[index] = {
         ...drawings.value[index],
         drawingNumber: drawingData.drawingNumber,
-        photo:         drawingData.photo !== undefined
-                         ? drawingData.photo
-                         : drawings.value[index].photo,
+        photos:        Array.isArray(drawingData.photos) ? drawingData.photos : drawings.value[index].photos,
         updatedAt:     now,
         operations,
       }
@@ -376,10 +381,10 @@ export const useDrawingsStore = defineStore('drawings', () => {
     // ── Async komprese + zápis do Firestore na pozadí ──
     ;(async () => {
       try {
-        const photo = await processPhoto(drawingData.photo)
+        const photos = await Promise.all((drawingData.photos || []).map(p => processPhoto(p)))
         await updateDoc(doc(db, COL, id), {
           drawingNumber: drawingData.drawingNumber,
-          photo,
+          photos,
           updatedAt:     serverTimestamp(),
           operations,
         })

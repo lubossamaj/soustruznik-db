@@ -2,11 +2,11 @@
   <!-- Karta výkresu v seznamu – kliknutím přechod na detail -->
   <div class="drawing-card" @click="$emit('click')" role="button" tabindex="0"
        @keydown.enter="$emit('click')">
-    <!-- Náhled fotky nebo placeholder -->
+    <!-- Náhled fotky nebo placeholder (zobrazí první fotku) -->
     <div class="drawing-card__photo">
       <img
-        v-if="drawing.photo"
-        :src="drawing.photo"
+        v-if="drawing.photos && drawing.photos.length > 0"
+        :src="drawing.photos[0]"
         :alt="`Výkres ${drawing.drawingNumber}`"
         class="drawing-card__img"
       />

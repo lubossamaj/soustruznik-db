@@ -39,49 +39,42 @@
             </div>
           </section>
 
-          <!-- SEKCE: Fotka výkresu -->
+          <!-- SEKCE: Fotky výkresu -->
           <section class="edit-section">
-            <div class="section-title">Fotka výkresu</div>
+            <div class="section-title">
+              Fotky výkresu
+              <span class="section-title__count">({{ form.photos.length }})</span>
+            </div>
 
-            <!-- Aktuální fotka -->
-            <div v-if="form.photo" class="photo-current">
-              <img :src="form.photo" alt="Výkres" class="photo-preview" />
-              <div class="photo-current__actions">
-                <label class="btn btn-secondary btn-block" style="cursor:pointer;">
-                  📷 Změnit fotku
-                  <input
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    class="sr-only"
-                    @change="handlePhotoChange"
-                  />
-                </label>
+            <!-- Mřížka fotek -->
+            <div v-if="form.photos.length > 0" class="photos-grid">
+              <div
+                v-for="(photo, idx) in form.photos"
+                :key="idx"
+                class="photos-grid__item"
+              >
+                <img :src="photo" :alt="`Fotka ${idx + 1}`" class="photos-grid__img" />
                 <button
                   type="button"
-                  class="btn btn-ghost btn-sm"
-                  @click="removePhoto"
-                >Odebrat fotku</button>
+                  class="photos-grid__remove"
+                  @click="removePhoto(idx)"
+                  aria-label="Odebrat fotku"
+                >✕</button>
+                <span v-if="idx === 0" class="photos-grid__badge">Náhled</span>
               </div>
             </div>
 
-            <!-- Placeholder – bez fotky -->
-            <div v-else>
-              <div class="photo-placeholder" style="margin-bottom: 12px;">
-                <span class="photo-placeholder__icon">📷</span>
-                <span>Žádná fotka</span>
-              </div>
-              <label class="btn btn-secondary btn-block" style="cursor:pointer;">
-                📷 Vyfotit výkres
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  class="sr-only"
-                  @change="handlePhotoChange"
-                />
-              </label>
-            </div>
+            <!-- Tlačítko přidat fotku -->
+            <label class="btn btn-secondary btn-block" style="cursor:pointer; margin-top: 10px;">
+              📷 {{ form.photos.length === 0 ? 'Vyfotit výkres' : 'Přidat fotku' }}
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                class="sr-only"
+                @change="handlePhotoChange"
+              />
+            </label>
           </section>
 
           <!-- SEKCE: Operace -->
@@ -208,7 +201,7 @@ function emptyOperation() {
 // Reaktivní formulářová data
 const form = reactive({
   drawingNumber: '',
-  photo: null,
+  photos: [],
   operations: [],
 })
 
@@ -222,7 +215,7 @@ onMounted(() => {
     const drawing = store.getDrawingById(route.params.id)
     if (drawing) {
       form.drawingNumber = drawing.drawingNumber
-      form.photo = drawing.photo
+      form.photos = Array.isArray(drawing.photos) ? [...drawing.photos] : []
       // Hluboká kopie operací, aby editace neměnila store přímo
       form.operations = drawing.operations.map(op => ({ ...op }))
     } else {
@@ -234,10 +227,10 @@ onMounted(() => {
   setTimeout(() => { isDirty.value = false }, 0)
 })
 
-// ─── Akce s fotkou ───────────────────────────────────────────────────────────
+// ─── Akce s fotkami ──────────────────────────────────────────────────────────
 
 /**
- * Načte foto přes FileReader a uloží jako base64.
+ * Načte foto přes FileReader a přidá jako base64 do pole fotek.
  */
 function handlePhotoChange(event) {
   const file = event.target.files?.[0]
@@ -245,7 +238,7 @@ function handlePhotoChange(event) {
 
   const reader = new FileReader()
   reader.onload = (e) => {
-    form.photo = e.target.result
+    form.photos.push(e.target.result)
     isDirty.value = true
   }
   reader.readAsDataURL(file)
@@ -254,8 +247,8 @@ function handlePhotoChange(event) {
   event.target.value = ''
 }
 
-function removePhoto() {
-  form.photo = null
+function removePhoto(index) {
+  form.photos.splice(index, 1)
   isDirty.value = true
 }
 
@@ -314,7 +307,7 @@ function saveDrawing() {
 
   const drawingData = {
     drawingNumber: form.drawingNumber,
-    photo: form.photo,
+    photos: form.photos,
     operations: form.operations,
   }
 
@@ -380,17 +373,57 @@ function goBack() {
   margin-top: 4px;
 }
 
-/* Fotka – aktuální */
-.photo-current {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+/* Mřížka fotek */
+.photos-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
 }
 
-.photo-current__actions {
+.photos-grid__item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+}
+
+.photos-grid__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photos-grid__remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.7);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.photos-grid__badge {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  background: var(--accent);
+  color: #1a1a2e;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.3px;
 }
 
 /* Skrytý file input */

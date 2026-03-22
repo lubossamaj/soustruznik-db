@@ -25,20 +25,22 @@
     <main class="page-content" v-else>
       <div class="container">
 
-        <!-- Fotka výkresu -->
-        <section class="detail-section">
-          <div class="section-title">Fotka výkresu</div>
-          <div v-if="drawing.photo" class="photo-wrapper" @click="showFullscreen = true">
-            <img
-              :src="drawing.photo"
-              :alt="`Výkres ${drawing.drawingNumber}`"
-              class="photo-preview"
-            />
-            <div class="photo-hint">Klepněte pro zvětšení</div>
+        <!-- Fotky výkresu -->
+        <section v-if="drawing.photos && drawing.photos.length > 0" class="detail-section">
+          <div class="section-title">
+            Fotky výkresu
+            <span v-if="drawing.photos.length > 1" class="section-title__count">({{ drawing.photos.length }})</span>
           </div>
-          <div v-else class="photo-placeholder">
-            <span class="photo-placeholder__icon">📷</span>
-            <span>Bez fotky</span>
+          <div class="photos-strip">
+            <div
+              v-for="(photo, idx) in drawing.photos"
+              :key="idx"
+              class="photos-strip__item"
+              @click="openFullscreen(idx)"
+            >
+              <img :src="photo" :alt="`Fotka ${idx + 1}`" class="photos-strip__img" />
+              <div class="photos-strip__hint">🔍</div>
+            </div>
           </div>
         </section>
 
@@ -102,14 +104,17 @@
     <!-- FULLSCREEN FOTKA -->
     <transition name="fade">
       <div
-        v-if="showFullscreen && drawing?.photo"
+        v-if="showFullscreen"
         class="photo-fullscreen"
         @click="showFullscreen = false"
         role="dialog"
         aria-label="Fullscreen fotka výkresu"
       >
-        <img :src="drawing.photo" :alt="`Výkres ${drawing.drawingNumber}`" />
-        <div class="photo-fullscreen__hint">Klepněte pro zavření</div>
+        <img :src="drawing.photos[fullscreenIndex]" :alt="`Fotka ${fullscreenIndex + 1}`" />
+        <div class="photo-fullscreen__hint">
+          <span v-if="drawing.photos.length > 1">{{ fullscreenIndex + 1 }} / {{ drawing.photos.length }} · </span>
+          Klepněte pro zavření
+        </div>
       </div>
     </transition>
 
@@ -151,6 +156,12 @@ const drawing = computed(() => store.getDrawingById(route.params.id))
 
 // Stav zobrazení fullscreen fotky
 const showFullscreen = ref(false)
+const fullscreenIndex = ref(0)
+
+function openFullscreen(idx) {
+  fullscreenIndex.value = idx
+  showFullscreen.value = true
+}
 
 // Stav potvrzovacího dialogu smazání
 const confirmDelete = ref(false)
@@ -195,24 +206,52 @@ function formatDate(isoString) {
   margin-bottom: 20px;
 }
 
-/* Fotka s hover efektem */
-.photo-wrapper {
-  cursor: zoom-in;
-  position: relative;
-  border-radius: var(--radius);
-  overflow: hidden;
+/* Pás fotek */
+.photos-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
 }
 
-.photo-hint {
+.photos-strip::-webkit-scrollbar {
+  height: 3px;
+}
+
+.photos-strip__item {
+  flex-shrink: 0;
+  position: relative;
+  width: 160px;
+  height: 120px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  cursor: zoom-in;
+  background: var(--bg-secondary);
+}
+
+.photos-strip__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photos-strip__hint {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: linear-gradient(transparent, rgba(0,0,0,0.6));
-  color: rgba(255,255,255,0.7);
-  font-size: 12px;
-  text-align: center;
-  padding: 20px 8px 8px;
+  top: 6px;
+  right: 6px;
+  font-size: 16px;
+  opacity: 0.7;
+}
+
+/* Nadpis sekce – počet */
+.section-title__count {
+  font-weight: 400;
+  color: var(--text-muted);
+  font-size: 11px;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 /* Metadata */
