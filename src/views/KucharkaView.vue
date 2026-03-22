@@ -657,10 +657,9 @@ const calcFeed = computed(() => {
 const weight = reactive({ shape: 'round', material: 'ocel', d: null, L: null, a: null, b: null })
 
 const weightMaterials = [
-  { id: 'ocel',  label: 'Fe',  name: 'Ocel',    rho: 7850 },
-  { id: 'nerez', label: 'Nerez', name: 'Nerez',   rho: 7900 },
-  { id: 'hlinik',label: 'Al',  name: 'Hliník',  rho: 2700 },
-  { id: 'med',   label: 'Cu',  name: 'Měď',     rho: 8900 },
+  { id: 'ocel',  label: 'Fe',  name: 'Ocel / Nerez', rho: 7874 },
+  { id: 'hlinik',label: 'Al',  name: 'Hliník',       rho: 2700 },
+  { id: 'med',   label: 'Cu',  name: 'Měď',          rho: 8900 },
 ]
 
 const calcWeight = computed(() => {
@@ -1363,7 +1362,7 @@ const materials = [
 }
 .mat-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
 }
 .mat-grid .shape-btn {
