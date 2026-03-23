@@ -64,16 +64,17 @@
               </div>
             </div>
 
-            <!-- Tlačítko přidat fotku -->
-            <label class="btn btn-secondary btn-block" style="cursor:pointer; margin-top: 10px;">
-              📷 {{ form.photos.length === 0 ? 'Vyfotit výkres' : 'Přidat fotku' }}
-              <input
-                type="file"
-                accept="image/*"
-                class="sr-only"
-                @change="handlePhotoChange"
-              />
-            </label>
+            <!-- Tlačítka přidat fotku -->
+            <div style="display:flex; gap:8px; margin-top:10px;">
+              <label class="btn btn-secondary" style="cursor:pointer; flex:1;">
+                📷 Fotoaparát
+                <input type="file" accept="image/*" capture="environment" class="sr-only" @change="handlePhotoChange" />
+              </label>
+              <label class="btn btn-secondary" style="cursor:pointer; flex:1;">
+                🖼️ Galerie
+                <input type="file" accept="image/*" class="sr-only" @change="handlePhotoChange" />
+              </label>
+            </div>
           </section>
 
           <!-- SEKCE: Operace -->

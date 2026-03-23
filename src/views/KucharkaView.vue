@@ -573,10 +573,16 @@
                 </div>
               </div>
 
-              <label class="btn btn-secondary btn-block" style="cursor:pointer; margin-top:10px">
-                📷 {{ editModal.form.photos.length === 0 ? 'Přidat fotku nástroje' : 'Přidat fotku' }}
-                <input type="file" accept="image/*" class="sr-only" @change="handlePhoto" />
-              </label>
+              <div style="display:flex; gap:8px; margin-top:10px;">
+                <label class="btn btn-secondary" style="cursor:pointer; flex:1;">
+                  📷 Fotoaparát
+                  <input type="file" accept="image/*" capture="environment" class="sr-only" @change="handlePhoto" />
+                </label>
+                <label class="btn btn-secondary" style="cursor:pointer; flex:1;">
+                  🖼️ Galerie
+                  <input type="file" accept="image/*" class="sr-only" @change="handlePhoto" />
+                </label>
+              </div>
             </div>
 
             <!-- Název -->
