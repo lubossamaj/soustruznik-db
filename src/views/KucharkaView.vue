@@ -575,7 +575,7 @@
 
               <label class="btn btn-secondary btn-block" style="cursor:pointer; margin-top:10px">
                 📷 {{ editModal.form.photos.length === 0 ? 'Přidat fotku nástroje' : 'Přidat fotku' }}
-                <input type="file" accept="image/*" capture="environment" class="sr-only" @change="handlePhoto" />
+                <input type="file" accept="image/*" class="sr-only" @change="handlePhoto" />
               </label>
             </div>
 

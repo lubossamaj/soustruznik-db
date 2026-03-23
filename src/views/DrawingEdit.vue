@@ -70,7 +70,6 @@
               <input
                 type="file"
                 accept="image/*"
-                capture="environment"
                 class="sr-only"
                 @change="handlePhotoChange"
               />
