@@ -242,6 +242,7 @@ function emptyOperation() {
     clampS1: 0.0,
     clampS2: 0.0,
     note: '',
+    photos: [],
   }
 }
 
@@ -264,7 +265,7 @@ onMounted(() => {
       form.drawingNumber = drawing.drawingNumber
       form.photos = Array.isArray(drawing.photos) ? [...drawing.photos] : []
       // Hluboká kopie operací, aby editace neměnila store přímo
-      form.operations = drawing.operations.map(op => ({ ...op }))
+      form.operations = drawing.operations.map(op => ({ ...op, photos: Array.isArray(op.photos) ? [...op.photos] : [] }))
     } else {
       // Výkres neexistuje → zpět na seznam
       router.replace({ name: 'DrawingList' })

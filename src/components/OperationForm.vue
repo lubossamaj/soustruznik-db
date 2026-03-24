@@ -167,6 +167,40 @@
         ></textarea>
       </div>
 
+      <!-- Fotky operace -->
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">
+          Fotky operace
+          <span v-if="operation.photos && operation.photos.length" style="font-weight:400;color:var(--text-muted)">({{ operation.photos.length }})</span>
+        </label>
+        <div v-if="operation.photos && operation.photos.length" class="photos-grid">
+          <div
+            v-for="(photo, idx) in operation.photos"
+            :key="idx"
+            class="photos-grid__item"
+          >
+            <img :src="photo" :alt="`Fotka ${idx + 1}`" class="photos-grid__img" />
+            <button
+              type="button"
+              class="photos-grid__remove"
+              @click="removeOpPhoto(idx)"
+              aria-label="Odebrat fotku"
+            >✕</button>
+            <span v-if="idx === 0" class="photos-grid__badge">Náhled</span>
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; margin-top:8px;">
+          <label class="btn btn-secondary" style="cursor:pointer; flex:1;">
+            📷 Fotoaparát
+            <input type="file" accept="image/*" capture="environment" class="sr-only" @change="handleOpPhoto" />
+          </label>
+          <label class="btn btn-secondary" style="cursor:pointer; flex:1;">
+            🖼️ Galerie
+            <input type="file" accept="image/*" class="sr-only" @change="handleOpPhoto" />
+          </label>
+        </div>
+      </div>
+
     </div>
   </div>
 </template>
@@ -226,10 +260,46 @@ function parseDecimal(val) {
 
 /**
  * Emituje aktualizaci jednoho pole operace.
- * Rodič DrwingEdit dostane celý aktualizovaný objekt operace.
+ * Rodič DrawingEdit dostane celý aktualizovaný objekt operace.
  */
 function update(field, value) {
   emit('update', { ...props.operation, [field]: value })
+}
+
+function compressImage(dataUrl, maxSize = 800, quality = 0.7) {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      let { width, height } = img
+      if (width > maxSize || height > maxSize) {
+        if (width >= height) { height = Math.round(height * maxSize / width); width = maxSize }
+        else { width = Math.round(width * maxSize / height); height = maxSize }
+      }
+      const canvas = document.createElement('canvas')
+      canvas.width = width; canvas.height = height
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height)
+      resolve(canvas.toDataURL('image/jpeg', quality))
+    }
+    img.src = dataUrl
+  })
+}
+
+async function handleOpPhoto(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = async (e) => {
+    const compressed = await compressImage(e.target.result)
+    const photos = [...(props.operation.photos ?? []), compressed]
+    emit('update', { ...props.operation, photos })
+  }
+  reader.readAsDataURL(file)
+  event.target.value = ''
+}
+
+function removeOpPhoto(idx) {
+  const photos = (props.operation.photos ?? []).filter((_, i) => i !== idx)
+  emit('update', { ...props.operation, photos })
 }
 </script>
 
@@ -272,6 +342,65 @@ function update(field, value) {
 
 .btn-icon--danger:hover:not(:disabled) {
   background: rgba(231, 76, 60, 0.15);
+}
+
+/* Mřížka fotek operace */
+.photos-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.photos-grid__item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+}
+.photos-grid__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.photos-grid__remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.7);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.photos-grid__badge {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  background: var(--accent);
+  color: #1a1a2e;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.3px;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* Tělo formuláře */

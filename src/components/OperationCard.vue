@@ -49,13 +49,71 @@
       <span class="op-card__note-label">Poznámka:</span>
       {{ operation.note }}
     </div>
+
+    <!-- Fotky operace -->
+    <div v-if="operation.photos && operation.photos.length" class="op-card__photos">
+      <div class="op-card__photos-strip">
+        <div
+          v-for="(photo, idx) in operation.photos"
+          :key="idx"
+          class="op-card__photo-thumb"
+          @click="openFullscreen(idx)"
+        >
+          <img :src="photo" :alt="`Fotka ${idx + 1}`" class="op-card__photo-img" />
+          <div class="op-card__photo-hint">🔍</div>
+        </div>
+      </div>
+    </div>
   </div>
+
+  <!-- Fullscreen galerie fotek operace -->
+  <Teleport to="body">
+    <Transition name="fade">
+      <div
+        v-if="fullscreen.open"
+        class="op-fullscreen"
+        @touchstart.passive="onTouchStart"
+        @touchend.passive="onTouchEnd"
+      >
+        <button class="op-fullscreen__close" @click="fullscreen.open = false" aria-label="Zavřít">✕</button>
+        <div v-if="operation.photos.length > 1" class="op-fullscreen__counter">
+          {{ fullscreen.index + 1 }} / {{ operation.photos.length }}
+        </div>
+        <img
+          :src="operation.photos[fullscreen.index]"
+          :alt="`Fotka ${fullscreen.index + 1}`"
+          @click="fullscreen.open = false"
+        />
+        <button
+          v-if="fullscreen.index > 0"
+          class="op-fullscreen__arrow op-fullscreen__arrow--left"
+          @click.stop="fullscreen.index--"
+          aria-label="Předchozí"
+        >‹</button>
+        <button
+          v-if="fullscreen.index < operation.photos.length - 1"
+          class="op-fullscreen__arrow op-fullscreen__arrow--right"
+          @click.stop="fullscreen.index++"
+          aria-label="Další"
+        >›</button>
+        <div v-if="operation.photos.length > 1" class="op-fullscreen__dots">
+          <span
+            v-for="(_, i) in operation.photos"
+            :key="i"
+            class="op-fullscreen__dot"
+            :class="{ 'op-fullscreen__dot--active': i === fullscreen.index }"
+            @click.stop="fullscreen.index = i"
+          />
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <script setup>
 // OperationCard.vue – zobrazení jedné operace v detailu výkresu (read-only)
 
-import { computed } from 'vue'
+import { computed, reactive } from 'vue'
 import { useToolsStore } from '../stores/tools.js'
 
 const props = defineProps({
@@ -66,6 +124,22 @@ const props = defineProps({
 })
 
 const toolsStore = useToolsStore()
+
+const fullscreen = reactive({ open: false, index: 0 })
+
+function openFullscreen(idx) {
+  fullscreen.index = idx
+  fullscreen.open = true
+}
+
+let touchStartX = 0
+function onTouchStart(e) { touchStartX = e.touches[0].clientX }
+function onTouchEnd(e) {
+  const dx = e.changedTouches[0].clientX - touchStartX
+  const len = props.operation.photos?.length ?? 0
+  if (dx < -50 && fullscreen.index < len - 1) fullscreen.index++
+  else if (dx > 50 && fullscreen.index > 0) fullscreen.index--
+}
 
 const toolLabel = computed(() => {
   const id = props.operation.tool
@@ -169,6 +243,121 @@ const toolLabel = computed(() => {
   color: var(--text-secondary);
   font-weight: 400;
 }
+
+/* Fotky operace */
+.op-card__photos {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.op-card__photos-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+}
+.op-card__photos-strip::-webkit-scrollbar { height: 3px; }
+.op-card__photo-thumb {
+  flex-shrink: 0;
+  position: relative;
+  width: 100px;
+  height: 80px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  cursor: zoom-in;
+  background: var(--bg-secondary);
+}
+.op-card__photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.op-card__photo-hint {
+  position: absolute;
+  top: 4px;
+  right: 5px;
+  font-size: 13px;
+  opacity: 0.75;
+}
+
+/* Fullscreen galerie fotek operace */
+.op-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0,0,0,0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.op-fullscreen img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  cursor: zoom-out;
+}
+.op-fullscreen__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(255,255,255,0.15);
+  border: none;
+  color: #fff;
+  font-size: 20px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+.op-fullscreen__counter {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255,255,255,0.8);
+  font-size: 13px;
+  font-weight: 600;
+}
+.op-fullscreen__arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255,255,255,0.15);
+  border: none;
+  color: #fff;
+  font-size: 28px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.op-fullscreen__arrow--left { left: 12px; }
+.op-fullscreen__arrow--right { right: 12px; }
+.op-fullscreen__dots {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+}
+.op-fullscreen__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.35);
+  cursor: pointer;
+}
+.op-fullscreen__dot--active { background: #fff; }
 
 /* Poznámka */
 .op-card__note {
