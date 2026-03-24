@@ -9,7 +9,7 @@
         </span>
         <span v-else class="op-card__number">Operace {{ operation.operationNumber }}</span>
       </div>
-      <span class="op-card__tool">{{ operation.tool }}</span>
+      <span class="op-card__tool">{{ toolLabel }}</span>
     </div>
 
     <!-- Parametry operace v mřížce -->
@@ -55,11 +55,24 @@
 <script setup>
 // OperationCard.vue – zobrazení jedné operace v detailu výkresu (read-only)
 
-defineProps({
+import { computed } from 'vue'
+import { useToolsStore } from '../stores/tools.js'
+
+const props = defineProps({
   operation: {
     type: Object,
     required: true,
   },
+})
+
+const toolsStore = useToolsStore()
+
+const toolLabel = computed(() => {
+  const id = props.operation.tool
+  if (!id) return ''
+  const tool = toolsStore.tools.find(t => t.id === id)
+  const name = tool?.name?.trim()
+  return name ? `${id} - ${name}` : id
 })
 
 
