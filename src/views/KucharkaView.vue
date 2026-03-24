@@ -535,19 +535,20 @@
 
             <!-- Fotky -->
             <div v-if="viewModal.tool.photos && viewModal.tool.photos.length" class="form-group">
-              <div class="form-label">
-                Fotky nástroje
-                <span style="font-weight:400;color:var(--text-muted)">({{ viewModal.tool.photos.length }})</span>
+              <!-- Velký hero náhled první fotky -->
+              <div class="tool-hero-photo" @click="openToolFullscreen(0)">
+                <img :src="viewModal.tool.photos[0]" alt="Náhled nástroje" class="tool-hero-photo__img" />
+                <div class="tool-hero-photo__hint">🔍</div>
               </div>
-              <div class="photos-grid">
+              <!-- Ostatní fotky v malé mřížce -->
+              <div v-if="viewModal.tool.photos.length > 1" class="photos-grid" style="margin-top:8px">
                 <div
-                  v-for="(photo, idx) in viewModal.tool.photos"
+                  v-for="(photo, idx) in viewModal.tool.photos.slice(1)"
                   :key="idx"
                   class="photos-grid__item"
-                  @click="openToolFullscreen(idx)"
+                  @click="openToolFullscreen(idx + 1)"
                 >
-                  <img :src="photo" :alt="`Fotka ${idx + 1}`" class="photos-grid__img" />
-                  <span v-if="idx === 0" class="photos-grid__badge">Náhled</span>
+                  <img :src="photo" :alt="`Fotka ${idx + 2}`" class="photos-grid__img" />
                 </div>
               </div>
             </div>
@@ -2099,6 +2100,31 @@ const materials = [
 .slide-up-enter-from, .slide-up-leave-to {
   opacity: 0;
   transform: translateY(100%);
+}
+
+/* Velký hero náhled první fotky v detailu nástroje */
+.tool-hero-photo {
+  position: relative;
+  width: 100%;
+  height: 260px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  cursor: zoom-in;
+  background: var(--bg-secondary);
+}
+.tool-hero-photo__img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: var(--bg-secondary);
+}
+.tool-hero-photo__hint {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 20px;
+  opacity: 0.7;
 }
 
 /* Detail nástroje – read-only tabulka */
