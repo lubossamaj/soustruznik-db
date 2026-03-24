@@ -116,6 +116,7 @@ function normalizeOperations(ops) {
     prepTime:        parseFloat(op.prepTime)    || 0,
     prodTime:        parseFloat(op.prodTime)    || 0,
     note:            op.note           || '',
+    photos:          Array.isArray(op.photos)   ? op.photos : [],
   }))
 }
 
