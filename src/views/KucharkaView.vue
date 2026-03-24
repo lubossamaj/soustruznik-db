@@ -44,7 +44,7 @@
               v-for="tool in toolsStore.tools"
               :key="tool.id"
               class="tool-row"
-              @click="openEdit(tool)"
+              @click="openView(tool)"
             >
               <!-- Fotka / placeholder (první z pole) -->
               <div class="tool-row__photo">
@@ -521,6 +521,93 @@
       </div>
     </main>
 
+    <!-- ==================== VIEW MODAL (Nože – detail, read-only) ==================== -->
+    <transition name="slide-up">
+      <div v-if="viewModal.open" class="edit-modal-overlay" @click.self="closeView">
+        <div class="edit-modal">
+
+          <div class="edit-modal__header">
+            <span class="edit-modal__title">{{ viewModal.tool.id }} – Detail nástroje</span>
+            <button class="edit-modal__close" @click="closeView">✕</button>
+          </div>
+
+          <div class="edit-modal__body">
+
+            <!-- Fotky -->
+            <div v-if="viewModal.tool.photos && viewModal.tool.photos.length" class="form-group">
+              <div class="form-label">
+                Fotky nástroje
+                <span style="font-weight:400;color:var(--text-muted)">({{ viewModal.tool.photos.length }})</span>
+              </div>
+              <div class="photos-grid">
+                <div
+                  v-for="(photo, idx) in viewModal.tool.photos"
+                  :key="idx"
+                  class="photos-grid__item"
+                  @click="openToolFullscreen(idx)"
+                >
+                  <img :src="photo" :alt="`Fotka ${idx + 1}`" class="photos-grid__img" />
+                  <span v-if="idx === 0" class="photos-grid__badge">Náhled</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Metadata tabulka -->
+            <div
+              v-if="viewModal.tool.manufacturerCode || viewModal.tool.insert || viewModal.tool.name || viewModal.tool.description || viewModal.tool.rpmMin || viewModal.tool.rpmMax || viewModal.tool.material || viewModal.tool.note"
+              class="tool-detail-table"
+            >
+              <div v-if="viewModal.tool.name" class="tool-detail-row">
+                <span class="tool-detail-row__label">Název</span>
+                <span class="tool-detail-row__value">{{ viewModal.tool.name }}</span>
+              </div>
+              <div v-if="viewModal.tool.manufacturerCode" class="tool-detail-row">
+                <span class="tool-detail-row__label">Výrobce / kat. č.</span>
+                <span class="tool-detail-row__value">{{ viewModal.tool.manufacturerCode }}</span>
+              </div>
+              <div v-if="viewModal.tool.insert" class="tool-detail-row">
+                <span class="tool-detail-row__label">Břit / VBD</span>
+                <span class="tool-detail-row__value">{{ viewModal.tool.insert }}</span>
+              </div>
+              <div v-if="viewModal.tool.description" class="tool-detail-row">
+                <span class="tool-detail-row__label">Popis</span>
+                <span class="tool-detail-row__value">{{ viewModal.tool.description }}</span>
+              </div>
+              <div v-if="viewModal.tool.rpmMin || viewModal.tool.rpmMax" class="tool-detail-row">
+                <span class="tool-detail-row__label">Otáčky</span>
+                <span class="tool-detail-row__value">{{ viewModal.tool.rpmMin }}–{{ viewModal.tool.rpmMax }} ot/min</span>
+              </div>
+              <div v-if="viewModal.tool.material" class="tool-detail-row">
+                <span class="tool-detail-row__label">Materiál</span>
+                <span class="tool-detail-row__value">{{ viewModal.tool.material }}</span>
+              </div>
+              <div v-if="viewModal.tool.note" class="tool-detail-row">
+                <span class="tool-detail-row__label">Poznámka</span>
+                <span class="tool-detail-row__value">{{ viewModal.tool.note }}</span>
+              </div>
+            </div>
+
+            <!-- Prázdný stav -->
+            <div
+              v-else-if="!(viewModal.tool.photos && viewModal.tool.photos.length)"
+              class="empty-state"
+              style="padding:24px 0"
+            >
+              <div class="empty-state__icon">🔧</div>
+              <div class="empty-state__text">Nástroj nemá žádné informace.</div>
+            </div>
+
+          </div>
+
+          <div class="edit-modal__footer">
+            <button class="btn btn-ghost" @click="closeView">Zavřít</button>
+            <button class="btn btn-primary" @click="closeView(); openEdit(viewModal.tool)">✏️ Upravit nástroj</button>
+          </div>
+
+        </div>
+      </div>
+    </transition>
+
     <!-- ==================== EDIT MODAL (Nože) ==================== -->
     <transition name="slide-up">
       <div v-if="editModal.open" class="edit-modal-overlay" @click.self="closeEdit">
@@ -704,33 +791,33 @@
       >
         <button class="photo-fullscreen__close" @click="toolFullscreen.open = false" aria-label="Zavřít">✕</button>
 
-        <div v-if="editModal.form.photos.length > 1" class="photo-fullscreen__counter">
-          {{ toolFullscreen.index + 1 }} / {{ editModal.form.photos.length }}
+        <div v-if="fullscreenPhotos.length > 1" class="photo-fullscreen__counter">
+          {{ toolFullscreen.index + 1 }} / {{ fullscreenPhotos.length }}
         </div>
 
         <img
-          :src="editModal.form.photos[toolFullscreen.index]"
+          :src="fullscreenPhotos[toolFullscreen.index]"
           :alt="`Fotka ${toolFullscreen.index + 1}`"
           @click="toolFullscreen.open = false"
         />
 
         <button
-          v-if="editModal.form.photos.length > 1 && toolFullscreen.index > 0"
+          v-if="fullscreenPhotos.length > 1 && toolFullscreen.index > 0"
           class="photo-fullscreen__arrow photo-fullscreen__arrow--left"
           @click.stop="toolFullscreen.index--"
           aria-label="Předchozí fotka"
         >‹</button>
 
         <button
-          v-if="editModal.form.photos.length > 1 && toolFullscreen.index < editModal.form.photos.length - 1"
+          v-if="fullscreenPhotos.length > 1 && toolFullscreen.index < fullscreenPhotos.length - 1"
           class="photo-fullscreen__arrow photo-fullscreen__arrow--right"
           @click.stop="toolFullscreen.index++"
           aria-label="Další fotka"
         >›</button>
 
-        <div v-if="editModal.form.photos.length > 1" class="photo-fullscreen__dots">
+        <div v-if="fullscreenPhotos.length > 1" class="photo-fullscreen__dots">
           <span
-            v-for="(_, i) in editModal.form.photos"
+            v-for="(_, i) in fullscreenPhotos"
             :key="i"
             class="photo-fullscreen__dot"
             :class="{ 'photo-fullscreen__dot--active': i === toolFullscreen.index }"
@@ -759,6 +846,18 @@ const tabs = [
   { id: 'vykres',    icon: '📐', label: 'Výkres'    },
 ]
 const activeTab = ref('noze')
+
+// ---- VIEW MODAL (read-only detail) ----
+const viewModal = reactive({ open: false, tool: {} })
+
+function openView(tool) {
+  viewModal.tool = tool
+  viewModal.open = true
+}
+
+function closeView() {
+  viewModal.open = false
+}
 
 // ---- EDIT MODAL ----
 const editModal = reactive({
@@ -822,8 +921,11 @@ function doDeleteTool() {
   toolsStore.deleteTool(pos)
 }
 
-// Fullscreen galerie nástroje
+// Fullscreen galerie nástroje – sdílené pro viewModal i editModal
 const toolFullscreen = reactive({ open: false, index: 0 })
+const fullscreenPhotos = computed(() =>
+  viewModal.open ? (viewModal.tool?.photos ?? []) : editModal.form.photos
+)
 
 function openToolFullscreen(idx) {
   toolFullscreen.index = idx
@@ -838,7 +940,7 @@ function onToolTouchStart(e) {
 
 function onToolTouchEnd(e) {
   const dx = e.changedTouches[0].clientX - toolTouchStartX
-  const len = editModal.form.photos.length
+  const len = fullscreenPhotos.value.length
   if (dx < -50 && toolFullscreen.index < len - 1) toolFullscreen.index++
   else if (dx > 50 && toolFullscreen.index > 0) toolFullscreen.index--
 }
@@ -1997,5 +2099,39 @@ const materials = [
 .slide-up-enter-from, .slide-up-leave-to {
   opacity: 0;
   transform: translateY(100%);
+}
+
+/* Detail nástroje – read-only tabulka */
+.tool-detail-table {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.tool-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 11px 14px;
+  gap: 12px;
+}
+.tool-detail-row + .tool-detail-row {
+  border-top: 1px solid var(--border);
+}
+.tool-detail-row__label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+.tool-detail-row__value {
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 500;
+  text-align: right;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 </style>
